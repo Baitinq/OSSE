@@ -3,5 +3,13 @@
 version = 3
 
 [[package]]
-name = "search-index"
+name = "client"
+version = "0.1.0"
+
+[[package]]
+name = "crawler"
+version = "0.1.0"
+
+[[package]]
+name = "indexer"
 version = "0.1.0"
