@@ -45,18 +45,18 @@ fn crawler(root_urls: Vec<&str>) {
     }
 }
 
-fn crawl_url(url: &str) -> Result<(String, Vec<String>), ()> {
+fn crawl_url(url: &str) -> Result<(String, Vec<String>), String> {
     let url = "https://".to_owned() + url;
 
     println!("Crawling {:?}", url);
 
     let response_res = reqwest::blocking::get(&url);
     if response_res.is_err() {
-        return Err(());
+        return Err("Error fetching ".to_owned() + &url);
     }
     let response_text_res = response_res.unwrap().text();
     if response_text_res.is_err() {
-        return Err(());
+        return Err("Error unwrapping the fetched HTML's text (".to_owned() + &url + ")");
     }
 
     let response_text = response_text_res.unwrap();
