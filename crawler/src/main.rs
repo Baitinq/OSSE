@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 fn main() {
     println!("Hello, world! Im the crawler!");
 
@@ -59,6 +61,7 @@ fn crawl_url(url: &str) -> (String, Vec<String>) {
     let next_urls = document
         .select(&link_selector)
         .filter_map(|link| link.value().attr("href"))
+        .unique()
         .map(String::from)
         .collect();
 

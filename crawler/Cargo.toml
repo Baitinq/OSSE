@@ -9,6 +9,7 @@ edition = "2021"
 blockingqueue = "0.1.1"
 reqwest = {version = "0.11", features = ["blocking"]}
 scraper = "0.12.0"
+itertools = "0.10.5"
 
 [[bin]]
 name = "crawler"
