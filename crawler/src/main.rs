@@ -45,7 +45,7 @@ fn crawl_url(url: &str) -> (String, Vec<String>) {
 
     println!("Crawling {:?}", url);
 
-    let response_res = reqwest::blocking::get(url);
+    let response_res = reqwest::blocking::get(&url);
     if response_res.is_err() {
         return (String::from(""), Vec::<String>::new());
     }
@@ -65,7 +65,22 @@ fn crawl_url(url: &str) -> (String, Vec<String>) {
         .map(String::from)
         .collect();
 
-    //todo: filter urls that point to bad stuff? or we do that at the beggining of craw_url. we probs need to return result
+    let fixup_urls = |us: Vec<String>| {
+        return us.into_iter().map(|u| {
+            //https://stackoverflow.com/questions/9646407/two-forward-slashes-in-a-url-src-href-attribute
+            if u.starts_with("//") {
+                format!("https:{}", &u)
+            }
+            else if u.starts_with("/") {
+                format!("{}{}", &url, &u)
+            }
+            else {
+                u
+            }
+        }).collect();
+    };
+
+    let next_urls = fixup_urls(next_urls);
 
     (response_text, next_urls)
 }
