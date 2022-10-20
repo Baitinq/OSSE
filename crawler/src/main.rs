@@ -37,6 +37,7 @@ fn crawler(root_urls: Vec<&str>) {
         println!("Next urls: {:?}", crawled_urls);
 
         //push content to index
+        _ = push_crawl_entry_to_indexer(url, _content);
 
         for url in crawled_urls {
             crawling_queue.push(url);
@@ -44,7 +45,6 @@ fn crawler(root_urls: Vec<&str>) {
     }
 }
 
-//takes url, returns content and list of urls
 fn crawl_url(url: &str) -> Result<(String, Vec<String>), ()> {
     let url = "https://".to_owned() + url;
 
@@ -88,4 +88,8 @@ fn crawl_url(url: &str) -> Result<(String, Vec<String>), ()> {
     let next_urls = fixup_urls(next_urls);
 
     Ok((response_text, next_urls))
+}
+
+fn push_crawl_entry_to_indexer(_url: String, _content: String) -> Result<(), ()> {
+    Ok(())
 }
