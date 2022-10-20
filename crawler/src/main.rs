@@ -25,7 +25,13 @@ fn crawler(root_urls: Vec<&str>) {
         //blocks
         let url = crawling_queue.pop();
 
-        let (_content, crawled_urls) = crawl_url(url.as_str());
+        let crawl_res = crawl_url(url.as_str());
+        if crawl_res.is_err() {
+            println!("Error crawling {}", url);
+            continue;
+        }
+
+        let (_content, crawled_urls) = crawl_res.unwrap();
 
         //println!("Content: {:?}", _content);
         println!("Next urls: {:?}", crawled_urls);
@@ -39,19 +45,18 @@ fn crawler(root_urls: Vec<&str>) {
 }
 
 //takes url, returns content and list of urls
-fn crawl_url(url: &str) -> (String, Vec<String>) {
-    //return result
+fn crawl_url(url: &str) -> Result<(String, Vec<String>), ()> {
     let url = "https://".to_owned() + url;
 
     println!("Crawling {:?}", url);
 
     let response_res = reqwest::blocking::get(&url);
     if response_res.is_err() {
-        return (String::from(""), Vec::<String>::new());
+        return Err(());
     }
     let response_text_res = response_res.unwrap().text();
     if response_text_res.is_err() {
-        return (String::from(""), Vec::<String>::new());
+        return Err(());
     }
 
     let response_text = response_text_res.unwrap();
@@ -66,21 +71,21 @@ fn crawl_url(url: &str) -> (String, Vec<String>) {
         .collect();
 
     let fixup_urls = |us: Vec<String>| {
-        return us.into_iter().map(|u| {
-            //https://stackoverflow.com/questions/9646407/two-forward-slashes-in-a-url-src-href-attribute
-            if u.starts_with("//") {
-                format!("https:{}", &u)
-            }
-            else if u.starts_with("/") {
-                format!("{}{}", &url, &u)
-            }
-            else {
-                u
-            }
-        }).collect();
+        us.into_iter()
+            .map(|u| {
+                //https://stackoverflow.com/questions/9646407/two-forward-slashes-in-a-url-src-href-attribute
+                if u.starts_with("//") {
+                    format!("https:{}", &u)
+                } else if u.starts_with('/') {
+                    format!("{}{}", &url, &u)
+                } else {
+                    u
+                }
+            })
+            .collect()
     };
 
     let next_urls = fixup_urls(next_urls);
 
-    (response_text, next_urls)
+    Ok((response_text, next_urls))
 }
