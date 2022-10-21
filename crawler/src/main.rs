@@ -2,7 +2,8 @@ use itertools::Itertools;
 use reqwest::blocking::{Client, Response};
 use serde::Serialize;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     println!("Hello, world! Im the crawler!");
 
     let root_urls = include_str!("../top-1000-websites.txt");
@@ -10,55 +11,60 @@ fn main() {
 
     let http_client = reqwest::blocking::Client::new();
 
-    crawler(&http_client, root_urls);
+    crawler(http_client, root_urls).await;
 }
 
-//takes list of strings - multithread here?
-fn crawler(http_client: &Client, root_urls: Vec<&str>) {
+//TODO: crawling depth? - async http client
+async fn crawler(http_client: Client, root_urls: Vec<&str>) {
     println!("Starting to crawl!");
 
     //add root urls to queue - TODO: max q size
     let crawling_queue: blockingqueue::BlockingQueue<String> = blockingqueue::BlockingQueue::new();
-    for url in root_urls {
-        crawling_queue.push(String::from(url));
-    }
+    root_urls
+        .into_iter()
+        .for_each(|u| crawling_queue.push(String::from(u)));
 
     //and start crawling
-    //FIXME: Async!
     loop {
-        //blocks
-        let url = crawling_queue.pop();
+        //even if we clone, the underlying queue implementation is still shared
+        let crawling_queue = crawling_queue.clone();
+        let http_client = http_client.clone();
+        tokio::spawn(async move {
+            //blocks
+            let url = crawling_queue.pop();
 
-        let crawl_res = crawl_url(http_client, url.as_str());
-        if crawl_res.is_err() {
-            println!("Error crawling {}", url);
-            continue;
-        }
+            let crawl_res = crawl_url(&http_client, url.as_str()).await;
+            if crawl_res.is_err() {
+                println!("Error crawling {}", url);
+                return;
+            }
 
-        let (content, crawled_urls) = crawl_res.unwrap();
+            let (content, crawled_urls) = crawl_res.unwrap();
 
-        //println!("Content: {:?}", content);
-        println!("Next urls: {:?}", crawled_urls);
+            //println!("Content: {:?}", content);
+            println!("Next urls: {:?}", crawled_urls);
 
-        //push content to index
-        let indexer_res = push_crawl_entry_to_indexer(
-            http_client,
-            String::from("http://127.0.0.1:4444/resource"),
-            url,
-            content,
-        )
-        .unwrap()
-        .text();
+            //push content to index
+            let indexer_res = push_crawl_entry_to_indexer(
+                &http_client,
+                String::from("http://127.0.0.1:4444/resource"),
+                url,
+                content,
+            )
+            .await
+            .unwrap()
+            .text();
 
-        println!("Pushed to indexer {:?}", &indexer_res);
+            println!("Pushed to indexer {:?}", &indexer_res);
 
-        for url in crawled_urls {
-            crawling_queue.push(url);
-        }
+            crawled_urls
+                .into_iter()
+                .for_each(|u| crawling_queue.push(u));
+        });
     }
 }
 
-fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<String>), String> {
+async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<String>), String> {
     let url = "https://".to_owned() + url;
 
     println!("Crawling {:?}", url);
@@ -103,7 +109,7 @@ fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<String>), S
     Ok((response_text, next_urls))
 }
 
-fn push_crawl_entry_to_indexer(
+async fn push_crawl_entry_to_indexer(
     http_client: &Client,
     indexer_url: String,
     url: String,
