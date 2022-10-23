@@ -1,3 +1,4 @@
 .direnv/
+frontend/dist/
 
 /target

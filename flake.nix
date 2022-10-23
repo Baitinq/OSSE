@@ -23,8 +23,9 @@
             pkgconfig
             (rust-bin.beta.latest.default.override {
               extensions = [ "rust-src" ];
-              targets = [ "x86_64-unknown-linux-gnu" ];
+              targets = [ "x86_64-unknown-linux-gnu" "wasm32-unknown-unknown" ];
             })
+            trunk
           ];
         };
       }
