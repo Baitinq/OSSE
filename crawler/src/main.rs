@@ -86,9 +86,11 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
         .select(&link_selector)
         .filter_map(|link| link.value().attr("href"))
         .unique()
+        .take(2)
         .map(String::from)
         .collect();
 
+    //we need to not append http if already has it
     let fixup_urls = |us: Vec<String>| {
         us.into_iter()
             .map(|u| {
@@ -105,6 +107,10 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
     };
 
     let next_urls = fixup_urls(next_urls);
+    //limit to 2 or smth for ram? or depth
+    //normalise words somewhere
+    //fuzzy?
+    //probs lots of places where we can borrow or not do stupid stuff
 
     Ok((response_text, next_urls))
 }
