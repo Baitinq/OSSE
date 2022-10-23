@@ -16,7 +16,7 @@ async fn main() {
 
 //TODO: crawling depth? - async http client
 async fn crawler(http_client: Client, root_urls: Vec<&str>) {
-    println!("Starting to crawl!");
+    dbg!("Starting to crawl!");
 
     //add root urls to queue - TODO: max q size
     let (tx_crawling_queue, rx_crawling_queue) = async_channel::bounded::<String>(4444);
@@ -35,14 +35,14 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
         tokio::spawn(async move {
             let crawl_res = crawl_url(&http_client, url.as_str()).await;
             if crawl_res.is_err() {
-                println!("Error crawling {}", url);
+                dbg!("Error crawling {}", url);
                 return;
             }
 
             let (content, crawled_urls) = crawl_res.unwrap();
 
-            //println!("Content: {:?}", content);
-            println!("Next urls: {:?}", crawled_urls);
+            //dbg!("Content: {:?}", &content);
+            dbg!("Next urls: {:?}", &crawled_urls);
 
             //push content to index
             let indexer_res = push_crawl_entry_to_indexer(
@@ -55,7 +55,7 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
             .unwrap()
             .text();
 
-            println!("Pushed to indexer {:?}", &indexer_res);
+            dbg!("Pushed to indexer {:?}", &indexer_res);
 
             for url in crawled_urls {
                 tx_crawling_queue.send(url).await.unwrap();
@@ -65,7 +65,7 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
 }
 
 async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<String>), String> {
-    println!("Crawling {:?}", url);
+    dbg!("Crawling {:?}", url);
 
     let response_res = http_client.get(url).send();
     if response_res.is_err() {
@@ -121,7 +121,7 @@ async fn push_crawl_entry_to_indexer(
     url: String,
     content: String,
 ) -> Result<Response, String> {
-    println!("Pushin to indexer");
+    dbg!("Pushin to indexer");
 
     #[derive(Serialize, Debug)]
     struct Resource {
