@@ -65,17 +65,15 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
 }
 
 async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<String>), String> {
-    let url = "https://".to_owned() + url;
-
     println!("Crawling {:?}", url);
 
-    let response_res = http_client.get(&url).send();
+    let response_res = http_client.get(url).send();
     if response_res.is_err() {
-        return Err("Error fetching ".to_owned() + &url);
+        return Err("Error fetching ".to_owned() + url);
     }
     let response_text_res = response_res.unwrap().text();
     if response_text_res.is_err() {
-        return Err("Error unwrapping the fetched HTML's text (".to_owned() + &url + ")");
+        return Err("Error unwrapping the fetched HTML's text (".to_owned() + url + ")");
     }
 
     let response_text = response_text_res.unwrap();
@@ -111,6 +109,8 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
     //normalise words somewhere
     //fuzzy?
     //probs lots of places where we can borrow or not do stupid stuff
+    //search for phrases?
+    //why multiple '/' at the end of sites"
 
     Ok((response_text, next_urls))
 }
