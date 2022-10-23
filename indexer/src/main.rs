@@ -11,7 +11,7 @@ struct AppState {
 async fn main() -> std::io::Result<()> {
     println!("Hello, world! Im the indexer!");
 
-    serve_http_endpoint("127.0.0.1", 4444).await
+    serve_http_endpoint("0.0.0.0", 4444).await
 }
 
 async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
