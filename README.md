@@ -20,8 +20,10 @@ $ nix-shell shell.nix
 Install cargo through your preferred method.
 
 
-### 2. Build!
+### 2. Run!
 
 ```
-$ cargo build
+$ cargo run --bin indexer
+$ cargo run --bin crawler
+$ trunk serve frontend/index.html
 ```
