@@ -19,20 +19,20 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
     println!("Starting to crawl!");
 
     //add root urls to queue - TODO: max q size
-    let crawling_queue: blockingqueue::BlockingQueue<String> = blockingqueue::BlockingQueue::new();
-    root_urls
-        .into_iter()
-        .for_each(|u| crawling_queue.push(String::from(u)));
+    let (tx_crawling_queue, rx_crawling_queue) = async_channel::bounded::<String>(4444);
+    for url in root_urls {
+        tx_crawling_queue.send(String::from(url)).await.unwrap();
+    }
 
     //and start crawling
     loop {
         //even if we clone, the underlying queue implementation is still shared
-        let crawling_queue = crawling_queue.clone();
+        let tx_crawling_queue = tx_crawling_queue.clone();
+        let rx_crawling_queue = rx_crawling_queue.clone();
+        //blocks - we move it up here as to at least block for next url and not endesly spawn tasks
+        let url = rx_crawling_queue.recv().await.unwrap();
         let http_client = http_client.clone();
         tokio::spawn(async move {
-            //blocks
-            let url = crawling_queue.pop();
-
             let crawl_res = crawl_url(&http_client, url.as_str()).await;
             if crawl_res.is_err() {
                 println!("Error crawling {}", url);
@@ -57,9 +57,9 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
 
             println!("Pushed to indexer {:?}", &indexer_res);
 
-            crawled_urls
-                .into_iter()
-                .for_each(|u| crawling_queue.push(u));
+            for url in crawled_urls {
+                tx_crawling_queue.send(url).await.unwrap();
+            }
         });
     }
 }
