@@ -55,16 +55,10 @@ async fn add_resource(data: web::Data<AppState>, resource: web::Json<Resource>) 
     let mut database = data.database.lock().unwrap();
     for word in fixed_words {
         //should probs do some priority
-        let maybe_urls = database.get(&word);
+        let maybe_urls = database.get_mut(&word);
         match maybe_urls {
-            Some(urls) => {
-                let mut updated_urls = urls.clone();
-                updated_urls.insert(resource.url.clone());
-                database.insert(word, updated_urls);
-            }
-            None => {
-                database.insert(word.clone(), HashSet::from([resource.url.clone()]));
-            }
+            Some(urls) => _ = urls.insert(resource.url.clone()),
+            None => _ = database.insert(word, HashSet::from([resource.url.clone()])),
         }
     }
 
@@ -93,8 +87,7 @@ async fn greet(data: web::Data<AppState>, term: web::Path<String>) -> impl Respo
                     .intersection(&results)
                     .map(|s| s.to_owned())
                     .collect();
-                let set: HashSet<String> = HashSet::from_iter(intersection);
-                valid_results = Some(set);
+                valid_results = Some(HashSet::from_iter(intersection));
             }
         }
     }
