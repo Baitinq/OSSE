@@ -46,17 +46,22 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
             dbg!("Next urls: {:?}", &crawled_urls);
 
             //push content to index
-            let indexer_res = push_crawl_entry_to_indexer(
+            let indexer_response = match push_crawl_entry_to_indexer(
                 &http_client,
                 String::from("http://127.0.0.1:4444/resource"),
                 url,
                 content,
             )
             .await
-            .unwrap()
-            .text();
+            {
+                Err(e) => {
+                    println!("{e}");
+                    return;
+                }
+                Ok(res) => res.text(),
+            };
 
-            dbg!("Pushed to indexer {:?}", &indexer_res);
+            dbg!("Pushed to indexer {:?}", &indexer_response);
 
             for url in crawled_urls {
                 tx_crawling_queue.send(url).await.unwrap();
@@ -70,16 +75,16 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
 
     let url = Url::parse(url).unwrap();
 
-    let response_res = http_client.get(url.as_str()).send();
-    if response_res.is_err() {
-        return Err("Error fetching ".to_owned() + url.as_str());
-    }
-    let response_text_res = response_res.unwrap().text();
-    if response_text_res.is_err() {
-        return Err("Error unwrapping the fetched HTML's text (".to_owned() + url.as_str() + ")");
-    }
+    let response_text = match http_client.get(url.as_str()).send() {
+        Err(_) => Err("Error fetching ".to_owned() + url.as_str()),
+        Ok(text_res) => match text_res.text() {
+            Err(_) => {
+                Err("Error unwrapping the fetched HTML's text (".to_owned() + url.as_str() + ")")
+            }
+            Ok(text) => Ok(text),
+        },
+    }?;
 
-    let response_text = response_text_res.unwrap();
     let document = scraper::Html::parse_document(response_text.as_str());
 
     let valid_url = |check_url: &Url| match check_url {
@@ -99,6 +104,7 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
         .filter(Result::is_ok)
         .map(Result::unwrap)
         .filter(valid_url)
+        //can we shuffle? for not the same 2 everytime
         .take(2)
         .map(String::from)
         .collect();
@@ -107,14 +113,12 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
     //fuzzy? - iterate over keys
     //probs lots of places where we can borrow or not do stupid stuff
     //search for phrases?
-    //why multiple '/' at the end of sites"
     //http workings lagging behind crawler, what to do?
     //group responses and transmit them in an array of 10 or smth -> or maybe just lower q size
     //use structs in database indexer
     //we need words priority or word list or smth (or in value of database show number of occurance or just val of importance of occurances)
     //i dont understand dbg! (how to print {})
     //is there empty urls?
-    //do proper matches instead of unwraps
 
     println!("Returning next urls, {:?}", next_urls);
     Ok((response_text, next_urls))
@@ -136,13 +140,11 @@ async fn push_crawl_entry_to_indexer(
 
     let request_body = Resource { url, content };
 
-    let response_res = http_client.post(&indexer_url).json(&request_body).send();
-    if response_res.is_err() {
-        return Err(format!(
+    match http_client.post(&indexer_url).json(&request_body).send() {
+        Err(_) => Err(format!(
             "Error pushing the crawler to indexer! {:?}",
             &indexer_url
-        ));
+        )),
+        Ok(response) => Ok(response),
     }
-
-    Ok(response_res.unwrap())
 }
