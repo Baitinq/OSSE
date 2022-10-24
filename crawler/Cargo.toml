@@ -12,7 +12,8 @@ itertools = "0.10.5"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "0.2.22", features = ["full"] }
 async-channel = "1.7.1"
-url = "*"
+url = "2.3.1"
+rand = "0.7.3"
 
 [[bin]]
 name = "crawler"

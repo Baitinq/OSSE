@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use rand::seq::IteratorRandom;
 use reqwest::blocking::{Client, Response};
 use serde::Serialize;
 use url::Url;
@@ -104,10 +105,8 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
         .filter(Result::is_ok)
         .map(Result::unwrap)
         .filter(valid_url)
-        //can we shuffle? for not the same 2 everytime
-        .take(2)
         .map(String::from)
-        .collect();
+        .choose_multiple(&mut rand::thread_rng(), 2); //we shuffle as to minimise repeating links
 
     //normalise words somewhere
     //fuzzy? - iterate over keys
