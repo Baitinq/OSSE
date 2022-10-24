@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use reqwest::blocking::{Client, Response};
 use serde::Serialize;
+use url::Url;
 
 #[tokio::main]
 async fn main() {
@@ -67,22 +68,25 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
 async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<String>), String> {
     dbg!("Crawling {:?}", url);
 
-    let response_res = http_client.get(url).send();
+    let url = Url::parse(url).unwrap();
+
+    let response_res = http_client.get(url.as_str()).send();
     if response_res.is_err() {
-        return Err("Error fetching ".to_owned() + url);
+        return Err("Error fetching ".to_owned() + url.as_str());
     }
     let response_text_res = response_res.unwrap().text();
     if response_text_res.is_err() {
-        return Err("Error unwrapping the fetched HTML's text (".to_owned() + url + ")");
+        return Err("Error unwrapping the fetched HTML's text (".to_owned() + url.as_str() + ")");
     }
 
     let response_text = response_text_res.unwrap();
     let document = scraper::Html::parse_document(response_text.as_str());
 
-    let valid_url = |url: &&str| match url {
-        u if *u == "/" => false,
-        u if u.starts_with("javascript:") => false, //generalise to be everything b4 : not equals http or https
-        u if u.starts_with('#') => false,
+    let valid_url = |check_url: &Url| match check_url {
+        u if !(u.scheme() == "http" || u.scheme() == "https") => false,
+        u if u.fragment().is_some() => false, //no # urls
+        u if u.query().is_some() => false,    //no ? urls
+        u if *u == url => false,              //no same url
         _ => true,
     };
 
@@ -91,33 +95,28 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
         .select(&link_selector)
         .filter_map(|link| link.value().attr("href"))
         .unique()
+        .map(|u| url.join(u))
+        .filter(Result::is_ok)
+        .map(Result::unwrap)
         .filter(valid_url)
         .take(2)
         .map(String::from)
         .collect();
 
-    let fixup_urls = |us: Vec<String>| {
-        us.iter()
-            .map(|u| {
-                //https://stackoverflow.com/questions/9646407/two-forward-slashes-in-a-url-src-href-attribute
-                if u.starts_with("//") {
-                    format!("https:{}", &u)
-                } else if u.starts_with('/') {
-                    format!("{}{}", &url, &u)
-                } else {
-                    u.to_string()
-                }
-            })
-            .collect()
-    };
-
-    let next_urls = fixup_urls(next_urls);
     //normalise words somewhere
-    //fuzzy?
+    //fuzzy? - iterate over keys
     //probs lots of places where we can borrow or not do stupid stuff
     //search for phrases?
     //why multiple '/' at the end of sites"
+    //http workings lagging behind crawler, what to do?
+    //group responses and transmit them in an array of 10 or smth -> or maybe just lower q size
+    //use structs in database indexer
+    //we need words priority or word list or smth (or in value of database show number of occurance or just val of importance of occurances)
+    //i dont understand dbg! (how to print {})
+    //is there empty urls?
+    //do proper matches instead of unwraps
 
+    println!("Returning next urls, {:?}", next_urls);
     Ok((response_text, next_urls))
 }
 

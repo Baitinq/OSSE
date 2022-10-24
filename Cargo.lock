@@ -418,6 +418,7 @@ dependencies = [
  "scraper",
  "serde",
  "tokio 0.2.25",
+ "url",
 ]
 
 [[package]]
