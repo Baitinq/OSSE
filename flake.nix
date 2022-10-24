@@ -19,6 +19,7 @@
       {
         devShells.default = mkShell {
           buildInputs = [
+            rust-analyzer
             openssl
             pkgconfig
             (rust-bin.beta.latest.default.override {
