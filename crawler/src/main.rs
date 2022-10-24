@@ -79,16 +79,23 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
     let response_text = response_text_res.unwrap();
     let document = scraper::Html::parse_document(response_text.as_str());
 
+    let valid_url = |url: &&str| match url {
+        u if *u == "/" => false,
+        u if u.starts_with("javascript:") => false, //generalise to be everything b4 : not equals http or https
+        u if u.starts_with('#') => false,
+        _ => true,
+    };
+
     let link_selector = scraper::Selector::parse("a").unwrap();
     let next_urls = document
         .select(&link_selector)
         .filter_map(|link| link.value().attr("href"))
         .unique()
+        .filter(valid_url)
         .take(2)
         .map(String::from)
         .collect();
 
-    //we need to not append http if already has it
     let fixup_urls = |us: Vec<String>| {
         us.iter()
             .map(|u| {
