@@ -19,7 +19,7 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
     dbg!("Starting to crawl!");
 
     //add root urls to queue - TODO: max q size
-    let (tx_crawling_queue, rx_crawling_queue) = async_channel::bounded::<String>(4444);
+    let (tx_crawling_queue, rx_crawling_queue) = async_channel::bounded::<String>(2222);
     for url in root_urls {
         tx_crawling_queue.send(String::from(url)).await.unwrap();
     }
