@@ -35,13 +35,16 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
         let url = rx_crawling_queue.recv().await.unwrap();
         let http_client = http_client.clone();
         tokio::spawn(async move {
-            let crawl_res = crawl_url(&http_client, url.as_str()).await;
-            if crawl_res.is_err() {
-                dbg!("Error crawling {}", url);
-                return;
-            }
+            let (content, crawled_urls) = match crawl_url(&http_client, url.as_str()).await {
+                Err(e) => {
+                    println!("Error crawling ({}): {}", url, e);
+                    return;
+                }
+                Ok(result) => result,
+            };
 
-            let (content, crawled_urls) = crawl_res.unwrap();
+            //DONT FORGET ENUMS
+            //CAN WE DO UNWRAP OR RETURN or lambda
 
             //dbg!("Content: {:?}", &content);
             dbg!("Next urls: {:?}", &crawled_urls);
