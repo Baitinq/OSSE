@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use rand::seq::IteratorRandom;
-use reqwest::blocking::{Client, Response};
+use reqwest::{Client, Response};
 use serde::Serialize;
 use url::Url;
 
@@ -11,7 +11,7 @@ async fn main() {
     let root_urls = include_str!("../top-1000-websites.txt");
     let root_urls = root_urls.split('\n').collect();
 
-    let http_client = reqwest::blocking::Client::new();
+    let http_client = reqwest::Client::new();
 
     crawler(http_client, root_urls).await;
 }
@@ -59,7 +59,7 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
                     println!("{e}");
                     return;
                 }
-                Ok(res) => res.text(),
+                Ok(res) => res.text().await,
             };
 
             dbg!("Pushed to indexer {:?}", &indexer_response);
@@ -76,9 +76,9 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
 
     let url = Url::parse(url).unwrap();
 
-    let response_text = match http_client.get(url.as_str()).send() {
+    let response_text = match http_client.get(url.as_str()).send().await {
         Err(_) => Err("Error fetching ".to_owned() + url.as_str()),
-        Ok(text_res) => match text_res.text() {
+        Ok(text_res) => match text_res.text().await {
             Err(_) => {
                 Err("Error unwrapping the fetched HTML's text (".to_owned() + url.as_str() + ")")
             }
@@ -139,7 +139,12 @@ async fn push_crawl_entry_to_indexer(
 
     let request_body = Resource { url, content };
 
-    match http_client.post(&indexer_url).json(&request_body).send() {
+    match http_client
+        .post(&indexer_url)
+        .json(&request_body)
+        .send()
+        .await
+    {
         Err(_) => Err(format!(
             "Error pushing the crawler to indexer! {:?}",
             &indexer_url
