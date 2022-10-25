@@ -984,6 +984,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "html2text",
+ "rand 0.7.3",
  "scraper",
  "serde",
 ]

@@ -1,10 +1,33 @@
 use actix_web::{get, post, web, App, HttpServer, Responder};
+use rand::Rng;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
-use std::sync::Mutex;
+use std::hash::{Hash, Hasher};
+use std::sync::{Arc, Mutex};
+
+#[derive(Debug, Clone)]
+struct CrawledResource {
+    url: String,
+    priority: u32, //how do we even calculate this
+    word: Arc<String>,
+}
+
+//We implement PartialEq, Eq and Hash to ignore the priority field.
+impl PartialEq for CrawledResource {
+    fn eq(&self, other: &Self) -> bool {
+        self.url == other.url && self.word == other.word
+    }
+}
+impl Eq for CrawledResource {}
+impl Hash for CrawledResource {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.url.hash(state);
+        self.word.hash(state);
+    }
+}
 
 struct AppState {
-    database: Mutex<HashMap<String, HashSet<String>>>,
+    database: Mutex<HashMap<String, HashSet<CrawledResource>>>,
 }
 
 #[actix_web::main]
@@ -54,11 +77,15 @@ async fn add_resource(data: web::Data<AppState>, resource: web::Json<Resource>) 
     //and for each changed content word we add it to the db (word -> list.append(url))
     let mut database = data.database.lock().unwrap();
     for word in fixed_words {
-        //should probs do some priority
-        let maybe_urls = database.get_mut(&word);
-        match maybe_urls {
-            Some(urls) => _ = urls.insert(resource.url.clone()),
-            None => _ = database.insert(word, HashSet::from([resource.url.clone()])),
+        let resource_to_add = CrawledResource {
+            url: resource.url.clone(),
+            priority: calculate_word_priority(&word, resource.content.as_str()),
+            word: Arc::new(word.clone()),
+        };
+
+        match database.get_mut(&word) {
+            Some(resources) => _ = resources.insert(resource_to_add),
+            None => _ = database.insert(word.clone(), HashSet::from([resource_to_add])),
         }
     }
 
@@ -71,7 +98,7 @@ async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Resp
     let query: Vec<&str> = term.split(' ').collect();
     let database = data.database.lock().unwrap();
 
-    let mut valid_results: Option<HashSet<String>> = None;
+    let mut valid_results: Option<HashSet<CrawledResource>> = None;
     for w in query {
         let curr_word_results = match database.get(w) {
             None => return format!("No results found for {:?}!", w),
@@ -80,14 +107,14 @@ async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Resp
 
         match valid_results {
             None => {
-                valid_results = Some(curr_word_results.clone());
+                valid_results = Some(curr_word_results.to_owned());
             }
             Some(results) => {
-                let intersection: Vec<String> = curr_word_results
+                let intersection: HashSet<CrawledResource> = curr_word_results
                     .intersection(&results)
                     .map(|s| s.to_owned())
                     .collect();
-                valid_results = Some(HashSet::from_iter(intersection));
+                valid_results = Some(intersection);
             }
         }
     }
@@ -96,4 +123,9 @@ async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Resp
         "Searching for: {term}\nResults: {:?}",
         valid_results.unwrap()
     )
+}
+
+//TODO!
+fn calculate_word_priority(_word: &str, _html_site: &str) -> u32 {
+    rand::thread_rng().gen::<u32>()
 }
