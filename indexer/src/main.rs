@@ -21,7 +21,7 @@ async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(shared_state.clone())
-            .service(greet)
+            .service(search)
             .service(add_resource)
     })
     .bind((address, port))?
@@ -67,17 +67,17 @@ async fn add_resource(data: web::Data<AppState>, resource: web::Json<Resource>) 
 }
 
 #[get("/search/{term}")]
-async fn greet(data: web::Data<AppState>, term: web::Path<String>) -> impl Responder {
+async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Responder {
     let query: Vec<&str> = term.split(' ').collect();
     let database = data.database.lock().unwrap();
 
     let mut valid_results: Option<HashSet<String>> = None;
     for w in query {
-        let curr_word_results = database.get(w);
-        if curr_word_results.is_none() {
-            return format!("No results found for {:?}!", w);
-        }
-        let curr_word_results = curr_word_results.unwrap();
+        let curr_word_results = match database.get(w) {
+            None => return format!("No results found for {:?}!", w),
+            Some(results) => results,
+        };
+
         match valid_results {
             None => {
                 valid_results = Some(curr_word_results.clone());
