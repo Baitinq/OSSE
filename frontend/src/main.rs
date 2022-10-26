@@ -1,18 +1,43 @@
 use gloo::console::log;
-use std::ops::Deref;
+use std::hash::{Hash, Hasher};
+use std::{ops::Deref, sync::Arc};
 use wasm_bindgen::*;
 use web_sys::{EventTarget, HtmlInputElement};
 use yew::prelude::*;
 
+//TODO: we should import this from the indexer
+#[derive(Debug, Clone)]
+struct CrawledResource {
+    url: String,
+    priority: u32, //how do we even calculate this
+    word: Arc<String>,
+}
+
+//We implement PartialEq, Eq and Hash to ignore the priority field.
+impl PartialEq for CrawledResource {
+    fn eq(&self, other: &Self) -> bool {
+        self.url == other.url && self.word == other.word
+    }
+}
+impl Eq for CrawledResource {}
+impl Hash for CrawledResource {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.url.hash(state);
+        self.word.hash(state);
+    }
+}
+
 #[derive(Debug, Clone)]
 struct State {
     pub search_query: String,
+    pub results: Vec<CrawledResource>, //TODO: some loading?
 }
 
 #[function_component(OSSE)]
 fn osse() -> Html {
     let state = use_state(|| State {
         search_query: "".to_string(),
+        results: vec![],
     });
 
     let cloned_state = state.clone();
@@ -33,6 +58,18 @@ fn osse() -> Html {
         let mut state = cloned_state.deref().clone();
         log!("Submit:{}", state.search_query);
         state.search_query = "".to_string();
+        state.results = vec![
+            CrawledResource {
+                url: "http://example.com".to_string(),
+                priority: 12,
+                word: Arc::new("example".to_string()),
+            },
+            CrawledResource {
+                url: "http://test.com".to_string(),
+                priority: 17,
+                word: Arc::new("test".to_string()),
+            },
+        ];
         cloned_state.set(state);
     });
 
@@ -52,7 +89,7 @@ fn osse() -> Html {
         <div class="container d-flex h-100">
             <div class="row align-self-center w-100">
                 <div class="col">
-                        <b class="display-4 text-truncate">{"OSSE"}</b>
+                        <b class="display-4">{"OSSE"}</b>
                         <p>{"Your favorite independent search engine."}</p>
                         <form onsubmit={on_submit}>
                             <div class="input-group input-group-lg my-2">
@@ -60,6 +97,13 @@ fn osse() -> Html {
                                 <button class="btn btn-primary" type="submit" >{"Search!"}</button>
                             </div>
                         </form>
+                        <section>
+                            {curr_state.results.into_iter().map(|r| {
+                                html!{
+                                    <div key={r.url.to_owned()}>{ format!("Result: {:?}!", r) }</div>
+                                }
+                            }).collect::<Html>()}
+                        </section>
                 </div>
             </div>
         </div>
