@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{get, post, web, App, HttpServer, Responder};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -42,7 +43,9 @@ async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
         database: Mutex::new(HashMap::new()),
     });
     HttpServer::new(move || {
+        let cors = Cors::permissive();
         App::new()
+            .wrap(cors)
             .app_data(shared_state.clone())
             .service(search)
             .service(add_resource)
