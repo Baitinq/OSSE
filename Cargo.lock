@@ -1102,6 +1102,7 @@ dependencies = [
  "rand 0.7.3",
  "scraper",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

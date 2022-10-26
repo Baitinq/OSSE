@@ -1,11 +1,11 @@
 use actix_web::{get, post, web, App, HttpServer, Responder};
 use rand::Rng;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 use std::sync::{Arc, Mutex};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 struct CrawledResource {
     url: String,
     priority: u32, //how do we even calculate this
@@ -101,7 +101,7 @@ async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Resp
     let mut valid_results: Option<HashSet<CrawledResource>> = None;
     for w in query {
         let curr_word_results = match database.get(w) {
-            None => return format!("No results found for {:?}!", w),
+            None => return "[]".to_string(),
             Some(results) => results,
         };
 
@@ -119,10 +119,7 @@ async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Resp
         }
     }
 
-    format!(
-        "Searching for: {term}\nResults: {:?}",
-        valid_results.unwrap()
-    )
+    serde_json::to_string(&valid_results.unwrap()).unwrap()
 }
 
 //TODO!
