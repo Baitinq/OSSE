@@ -47,6 +47,7 @@ async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .app_data(shared_state.clone())
+            .service(no_search)
             .service(search)
             .service(add_resource)
     })
@@ -94,6 +95,11 @@ async fn add_resource(data: web::Data<AppState>, resource: web::Json<Resource>) 
 
     println!("Added resource! {:?}", database.len());
     format!("{:?}", resource)
+}
+
+#[get("/search")]
+async fn no_search(_data: web::Data<AppState>) -> impl Responder {
+    "[]".to_string()
 }
 
 #[get("/search/{term}")]
