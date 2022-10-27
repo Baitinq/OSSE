@@ -1,6 +1,8 @@
 use gloo::console::log;
 use gloo_net::http::Request;
+use itertools::Itertools;
 use serde::Deserialize;
+use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 use std::{ops::Deref, sync::Arc};
 use wasm_bindgen::*;
@@ -22,6 +24,19 @@ impl PartialEq for CrawledResource {
     }
 }
 impl Eq for CrawledResource {}
+
+impl PartialOrd for CrawledResource {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for CrawledResource {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.priority.cmp(&other.priority)
+    }
+}
+
 impl Hash for CrawledResource {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.url.hash(state);
@@ -44,7 +59,8 @@ fn osse() -> Html {
 
     let display_results = |results: &Vec<CrawledResource>| -> Html {
         results
-            .into_iter()
+            .iter()
+            .sorted()
             .map(|r| {
                 html! {
                     <div key={r.url.to_owned()}>
