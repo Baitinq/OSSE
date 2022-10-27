@@ -23,7 +23,7 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
     //add root urls to queue - TODO: max q size
     let (tx_crawling_queue, rx_crawling_queue) = async_channel::bounded::<String>(2222);
     for url in root_urls {
-        tx_crawling_queue.send(String::from(url)).await.unwrap();
+        tx_crawling_queue.send(url.to_string()).await.unwrap();
     }
 
     //and start crawling
@@ -45,6 +45,8 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
 
             //DONT FORGET ENUMS
             //CAN WE DO UNWRAP OR RETURN or lambda
+            //HOW TF DOES CRAWLER WORK. DOESNT QUEUE FILL. LOTS OF WAITING THINGS??
+            //REMOVE ALL String::from, do .to_string()
 
             //dbg!("Content: {:?}", &content);
             dbg!("Next urls: {:?}", &crawled_urls);
@@ -52,7 +54,7 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
             //push content to index
             let indexer_response = match push_crawl_entry_to_indexer(
                 &http_client,
-                String::from("http://127.0.0.1:4444/resource"),
+                "http://127.0.0.1:4444/resource".to_string(),
                 url,
                 content,
             )
@@ -116,11 +118,12 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
     //probs lots of places where we can borrow or not do stupid stuff
     //search for phrases?
     //http workings lagging behind crawler, what to do?
-    //group responses and transmit them in an array of 10 or smth -> or maybe just lower q size
+    //group responses and transmit them in an array of 10 or smth -> or maybe just lower q size!
     //use structs in database indexer
     //we need words priority or word list or smth (or in value of database show number of occurance or just val of importance of occurances)
     //i dont understand dbg! (how to print {})
     //is there empty urls?
+    //user agent?
 
     println!("Returning next urls, {:?}", next_urls);
     Ok((response_text, next_urls))
