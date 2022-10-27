@@ -42,6 +42,19 @@ fn osse() -> Html {
         results: vec![],
     });
 
+    let display_results = |results: &Vec<CrawledResource>| -> Html {
+        results
+            .into_iter()
+            .map(|r| {
+                html! {
+                    <div key={r.url.to_owned()}>
+                        <a href={r.url.to_owned()}>{r.url.to_owned()}{"--"}{r.priority}</a>
+                    </div>
+                }
+            })
+            .collect::<Html>()
+    };
+
     let search_query_changed = {
         let cloned_state = state.clone();
         Callback::from(move |event: InputEvent| {
@@ -112,11 +125,7 @@ fn osse() -> Html {
                             </div>
                         </form>
                         <section>
-                            {curr_state.results.into_iter().map(|r| {
-                                html!{
-                                    <div key={r.url.to_owned()}>{ format!("Result: {:?}!", r) }</div>
-                                }
-                            }).collect::<Html>()}
+                            {display_results(&curr_state.results)}
                         </section>
                 </div>
             </div>
