@@ -109,12 +109,13 @@ async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Resp
 
     let mut valid_results: Option<HashSet<CrawledResource>> = None;
     for w in query {
-        let curr_word_results = match database.get(w) {
+        let curr_word_results = match search_word_in_db(&database, w) {
             None => return "[]".to_string(),
-            Some(results) => results,
+            Some(curr_results) => curr_results,
         };
 
         match valid_results {
+            //Initialise valid_results
             None => {
                 valid_results = Some(curr_word_results.to_owned());
             }
@@ -129,6 +130,13 @@ async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Resp
     }
 
     serde_json::to_string(&valid_results.unwrap()).unwrap()
+}
+
+fn search_word_in_db<'a>(
+    db: &'a HashMap<String, HashSet<CrawledResource>>,
+    word: &'a str,
+) -> Option<&'a HashSet<CrawledResource>> {
+    db.get(word)
 }
 
 //TODO!
