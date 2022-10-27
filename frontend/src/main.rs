@@ -1,4 +1,6 @@
 use gloo::console::log;
+use gloo_net::http::Request;
+use serde::Deserialize;
 use std::hash::{Hash, Hasher};
 use std::{ops::Deref, sync::Arc};
 use wasm_bindgen::*;
@@ -6,7 +8,7 @@ use web_sys::{EventTarget, HtmlInputElement};
 use yew::prelude::*;
 
 //TODO: we should import this from the indexer
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 struct CrawledResource {
     url: String,
     priority: u32, //how do we even calculate this
@@ -40,38 +42,50 @@ fn osse() -> Html {
         results: vec![],
     });
 
-    let cloned_state = state.clone();
-    let search_query_changed = Callback::from(move |event: InputEvent| {
-        let target: EventTarget = event
-            .target()
-            .expect("Event should have a target when dispatched");
-        let input = target.unchecked_into::<HtmlInputElement>().value();
-        log!("Input changed: {}", &input);
-        let mut state = cloned_state.deref().clone();
-        state.search_query = input;
-        cloned_state.set(state);
-    });
+    let search_query_changed = {
+        let cloned_state = state.clone();
+        Callback::from(move |event: InputEvent| {
+            let target: EventTarget = event
+                .target()
+                .expect("Event should have a target when dispatched");
+            let input = target.unchecked_into::<HtmlInputElement>().value();
+            log!("Input changed: {}", &input);
+            let mut state = cloned_state.deref().clone();
+            state.search_query = input;
+            cloned_state.set(state);
+        })
+    };
 
-    let cloned_state = state.clone();
-    let on_submit = Callback::from(move |event: FocusEvent| {
-        event.prevent_default();
-        let mut state = cloned_state.deref().clone();
-        log!("Submit:{}", state.search_query);
-        state.search_query = "".to_string();
-        state.results = vec![
-            CrawledResource {
-                url: "http://example.com".to_string(),
-                priority: 12,
-                word: Arc::new("example".to_string()),
-            },
-            CrawledResource {
-                url: "http://test.com".to_string(),
-                priority: 17,
-                word: Arc::new("test".to_string()),
-            },
-        ];
-        cloned_state.set(state);
-    });
+    let on_submit = {
+        let cloned_state = state.clone();
+
+        Callback::from(move |event: FocusEvent| {
+            event.prevent_default();
+            let state = cloned_state.deref().clone();
+
+            //fetch
+            {
+                let cloned_state = cloned_state.clone();
+                wasm_bindgen_futures::spawn_local(async move {
+                    let mut state = cloned_state.deref().clone();
+                    let endpoint = format!("http://127.0.0.1:4444/search/{}", &state.search_query);
+
+                    let fetched_results = Request::get(endpoint.as_str()).send().await.unwrap();
+
+                    let fetched_json: Vec<CrawledResource> = match fetched_results.json().await {
+                        Err(e) => panic!("Im panic: {}", e),
+                        Ok(json) => json,
+                    };
+
+                    state.results = fetched_json;
+
+                    cloned_state.set(state);
+                });
+            }
+
+            log!("Submit: {}", state.search_query);
+        })
+    };
 
     let curr_state = state.deref().to_owned();
 
