@@ -11,7 +11,7 @@ use yew::prelude::*;
 
 //TODO: we should import this from the indexer
 #[derive(Debug, Clone, Deserialize)]
-pub struct CrawledResource {
+pub struct IndexedResource {
     url: String,
     title: String,
     description: String,
@@ -20,26 +20,26 @@ pub struct CrawledResource {
 }
 
 //We implement PartialEq, Eq and Hash to ignore the priority field.
-impl PartialEq for CrawledResource {
+impl PartialEq for IndexedResource {
     fn eq(&self, other: &Self) -> bool {
         self.url == other.url && self.word == other.word
     }
 }
-impl Eq for CrawledResource {}
+impl Eq for IndexedResource {}
 
-impl PartialOrd for CrawledResource {
+impl PartialOrd for IndexedResource {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for CrawledResource {
+impl Ord for IndexedResource {
     fn cmp(&self, other: &Self) -> Ordering {
         self.priority.cmp(&other.priority).reverse()
     }
 }
 
-impl Hash for CrawledResource {
+impl Hash for IndexedResource {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.url.hash(state);
         self.word.hash(state);
@@ -48,7 +48,7 @@ impl Hash for CrawledResource {
 
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct ResultComponentProps {
-    result: CrawledResource,
+    result: IndexedResource,
 }
 
 #[function_component(ResultComponent)]
@@ -61,7 +61,7 @@ fn result_component(props: &ResultComponentProps) -> Html {
 #[derive(Debug, Clone)]
 struct State {
     pub search_query: String,
-    pub results: Option<Vec<CrawledResource>>, //TODO: some loading?
+    pub results: Option<Vec<IndexedResource>>, //TODO: some loading?
 }
 
 #[function_component(OSSE)]
@@ -71,7 +71,7 @@ fn osse() -> Html {
         results: None,
     });
 
-    let display_results = |maybe_results: &Option<Vec<CrawledResource>>| -> Html {
+    let display_results = |maybe_results: &Option<Vec<IndexedResource>>| -> Html {
         let maybe_results = maybe_results.as_ref();
         if maybe_results.is_none() {
             return html! {};
@@ -128,7 +128,7 @@ fn osse() -> Html {
 
                     let fetched_results = Request::get(endpoint.as_str()).send().await.unwrap();
 
-                    let fetched_json: Vec<CrawledResource> = match fetched_results.json().await {
+                    let fetched_json: Vec<IndexedResource> = match fetched_results.json().await {
                         Err(e) => panic!("Im panic: {}", e),
                         Ok(json) => json,
                     };

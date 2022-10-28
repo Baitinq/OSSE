@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone, Serialize)]
-struct CrawledResource {
+struct IndexedResource {
     url: String,
     title: String,
     description: String,
@@ -15,13 +15,13 @@ struct CrawledResource {
 }
 
 //We implement PartialEq, Eq and Hash to ignore the priority field.
-impl PartialEq for CrawledResource {
+impl PartialEq for IndexedResource {
     fn eq(&self, other: &Self) -> bool {
         self.url == other.url && self.word == other.word
     }
 }
-impl Eq for CrawledResource {}
-impl Hash for CrawledResource {
+impl Eq for IndexedResource {}
+impl Hash for IndexedResource {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.url.hash(state);
         self.word.hash(state);
@@ -29,7 +29,7 @@ impl Hash for CrawledResource {
 }
 
 struct AppState {
-    database: Mutex<HashMap<String, HashSet<CrawledResource>>>,
+    database: Mutex<HashMap<String, HashSet<IndexedResource>>>,
 }
 
 #[actix_web::main]
@@ -57,18 +57,23 @@ async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
     .await
 }
 
+//TODO: sufficiently simmilar word in search (algorithm)
 //we need to rename stuff
 #[derive(Deserialize, Debug)]
-struct Resource {
+struct CrawledResource {
     url: String,
     content: String,
 }
 
 #[post("/resource")]
-async fn add_resource(data: web::Data<AppState>, resource: web::Json<Resource>) -> impl Responder {
+async fn add_resource(
+    data: web::Data<AppState>,
+    resource: web::Json<CrawledResource>,
+) -> impl Responder {
     //parse content
     let document = scraper::Html::parse_document(resource.content.as_str());
 
+    //TODO: Not very good, can we just body.get_text()?
     let text = html2text::from_read(resource.content.as_str().as_bytes(), resource.content.len());
 
     let split_words = text.split(' ');
@@ -101,7 +106,7 @@ async fn add_resource(data: web::Data<AppState>, resource: web::Json<Resource>) 
     //and for each changed content word we add it to the db (word -> list.append(url))
     let mut database = data.database.lock().unwrap();
     for word in &fixed_words {
-        let resource_to_add = CrawledResource {
+        let resource_to_add = IndexedResource {
             url: resource.url.clone(),
             priority: calculate_word_priority(word, resource.content.as_str(), &fixed_words),
             word: Arc::new(word.clone()),
@@ -130,7 +135,7 @@ async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Resp
     let database = data.database.lock().unwrap();
 
     //percentage of valid words
-    let mut valid_results: Option<HashSet<CrawledResource>> = None;
+    let mut valid_results: Option<HashSet<IndexedResource>> = None;
     for w in query {
         let curr_word_results = match search_word_in_db(&database, w.to_string()) {
             None => return "[]".to_string(),
@@ -143,7 +148,7 @@ async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Resp
                 valid_results = Some(curr_word_results.to_owned());
             }
             Some(results) => {
-                let intersection: HashSet<CrawledResource> = curr_word_results
+                let intersection: HashSet<IndexedResource> = curr_word_results
                     .intersection(&results)
                     .map(|s| s.to_owned())
                     .collect();
@@ -156,13 +161,15 @@ async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Resp
 }
 
 fn search_word_in_db(
-    db: &HashMap<String, HashSet<CrawledResource>>,
+    db: &HashMap<String, HashSet<IndexedResource>>,
     word: String,
-) -> Option<&HashSet<CrawledResource>> {
+) -> Option<&HashSet<IndexedResource>> {
     db.get(&word)
 }
 
 fn calculate_word_priority(word: &str, _html_site: &str, words: &[String]) -> u32 {
+    //TODO: priorize lower levels of url, priorize word in url/title/description or main?
+
     //atm priority is just the number of occurences in the site.
     words.iter().filter(|w| *w == word).count() as u32
 }

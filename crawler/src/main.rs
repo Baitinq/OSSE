@@ -138,12 +138,12 @@ async fn push_crawl_entry_to_indexer(
     dbg!("Pushin to indexer");
 
     #[derive(Serialize, Debug)]
-    struct Resource {
+    struct CrawledResource {
         url: String,
         content: String,
     }
 
-    let request_body = Resource { url, content };
+    let request_body = CrawledResource { url, content };
 
     match http_client
         .post(&indexer_url)
