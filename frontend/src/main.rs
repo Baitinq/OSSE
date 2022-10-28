@@ -47,28 +47,40 @@ impl Hash for CrawledResource {
 #[derive(Debug, Clone)]
 struct State {
     pub search_query: String,
-    pub results: Vec<CrawledResource>, //TODO: some loading?
+    pub results: Option<Vec<CrawledResource>>, //TODO: some loading?
 }
 
 #[function_component(OSSE)]
 fn osse() -> Html {
     let state = use_state(|| State {
         search_query: "".to_string(),
-        results: vec![],
+        results: None,
     });
 
-    let display_results = |results: &Vec<CrawledResource>| -> Html {
-        results
-            .iter()
-            .sorted()
-            .map(|r| {
-                html! {
-                    <div key={r.url.to_owned()}>
-                        <a href={r.url.to_owned()}>{r.url.to_owned()}{"--"}{r.priority}</a>
-                    </div>
-                }
-            })
-            .collect::<Html>()
+    let display_results = |maybe_results: &Option<Vec<CrawledResource>>| -> Html {
+        let maybe_results = maybe_results.as_ref();
+        if maybe_results.is_none() {
+            return html! {};
+        }
+
+        let results = maybe_results.unwrap();
+        if !results.is_empty() {
+            results
+                .iter()
+                .sorted()
+                .map(|r| {
+                    html! {
+                        <div key={r.url.to_owned()}>
+                            <a href={r.url.to_owned()}>{r.url.to_owned()}{"--"}{r.priority}</a>
+                        </div>
+                    }
+                })
+                .collect::<Html>()
+        } else {
+            html! {
+                <p>{"No results!"}</p>
+            }
+        }
     };
 
     let search_query_changed = {
@@ -107,7 +119,7 @@ fn osse() -> Html {
                         Ok(json) => json,
                     };
 
-                    state.results = fetched_json;
+                    state.results = Some(fetched_json);
 
                     cloned_state.set(state);
                 });
