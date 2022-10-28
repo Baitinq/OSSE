@@ -11,7 +11,7 @@ use yew::prelude::*;
 
 //TODO: we should import this from the indexer
 #[derive(Debug, Clone, Deserialize)]
-struct CrawledResource {
+pub struct CrawledResource {
     url: String,
     title: String,
     description: String,
@@ -46,6 +46,18 @@ impl Hash for CrawledResource {
     }
 }
 
+#[derive(Properties, Clone, PartialEq, Eq)]
+pub struct ResultComponentProps {
+    result: CrawledResource,
+}
+
+#[function_component(ResultComponent)]
+fn result_component(props: &ResultComponentProps) -> Html {
+    html! {
+        <a href={props.result.url.clone()}>{props.result.url.clone()}{"--"}{props.result.title.clone()}{"----"}{props.result.description.clone()}{format!("PRIO: {}", props.result.priority)}</a>
+    }
+}
+
 #[derive(Debug, Clone)]
 struct State {
     pub search_query: String,
@@ -73,8 +85,7 @@ fn osse() -> Html {
                 .map(|r| {
                     html! {
                         <div key={r.url.to_owned()}>
-                        //Show page title and description
-                            <a href={r.url.to_owned()}>{r.url.to_owned()}{"--"}{r.title.to_owned()}{"----"}{r.description.to_owned()}{format!("PRIO: {}", r.priority)}</a>
+                            <ResultComponent result={r.clone()} />
                         </div>
                     }
                 })
