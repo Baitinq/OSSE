@@ -13,7 +13,9 @@ use yew::prelude::*;
 #[derive(Debug, Clone, Deserialize)]
 struct CrawledResource {
     url: String,
-    priority: u32, //how do we even calculate this
+    title: String,
+    description: String,
+    priority: u32,
     word: Arc<String>,
 }
 
@@ -72,7 +74,7 @@ fn osse() -> Html {
                     html! {
                         <div key={r.url.to_owned()}>
                         //Show page title and description
-                            <a href={r.url.to_owned()}>{r.url.to_owned()}</a>
+                            <a href={r.url.to_owned()}>{r.url.to_owned()}{"--"}{r.title.to_owned()}{"----"}{r.description.to_owned()}</a>
                         </div>
                     }
                 })
