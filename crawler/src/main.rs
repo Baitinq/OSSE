@@ -46,7 +46,6 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>) {
             //DONT FORGET ENUMS
             //CAN WE DO UNWRAP OR RETURN or lambda
             //HOW TF DOES CRAWLER WORK. DOESNT QUEUE FILL. LOTS OF WAITING THINGS??
-            //REMOVE ALL String::from, do .to_string()
 
             //dbg!("Content: {:?}", &content);
             dbg!("Next urls: {:?}", &crawled_urls);

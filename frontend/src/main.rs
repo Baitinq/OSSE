@@ -97,6 +97,7 @@ fn osse() -> Html {
                 let cloned_state = cloned_state.clone();
                 wasm_bindgen_futures::spawn_local(async move {
                     let mut state = cloned_state.deref().clone();
+                    //TODO: what if its on another host
                     let endpoint = format!("http://127.0.0.1:4444/search/{}", &state.search_query);
 
                     let fetched_results = Request::get(endpoint.as_str()).send().await.unwrap();
@@ -132,6 +133,7 @@ fn osse() -> Html {
                         </div>
                     </nav>
                 </header>
+                //SET AT MIDDLE OF VIEWPORT IF NO SEARCHING AND TOP 25% IF SEARCHING
                 <main class="container">
                     <div class="row">
                         <div class="col">

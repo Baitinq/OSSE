@@ -107,6 +107,7 @@ async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Resp
     let query: Vec<&str> = term.split(' ').collect();
     let database = data.database.lock().unwrap();
 
+    //percentage of valid words
     let mut valid_results: Option<HashSet<CrawledResource>> = None;
     for w in query {
         let curr_word_results = match search_word_in_db(&database, w) {
