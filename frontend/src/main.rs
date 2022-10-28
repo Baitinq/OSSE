@@ -71,7 +71,8 @@ fn osse() -> Html {
                 .map(|r| {
                     html! {
                         <div key={r.url.to_owned()}>
-                            <a href={r.url.to_owned()}>{r.url.to_owned()}{"--"}{r.priority}</a>
+                        //Show page title and description
+                            <a href={r.url.to_owned()}>{r.url.to_owned()}</a>
                         </div>
                     }
                 })
@@ -133,48 +134,50 @@ fn osse() -> Html {
 
     html! {
         <>
-            <div style={"display: flex; flex-direction: column; min-height: 100vh;"}>
-                <header>
-                    <nav class="navbar bg-light sticky-top">
-                        <div class="container-fluid">
-                            <div>
-                                <a href="https://github.com/Baitinq/OSSE" class="navbar-brand mb-0 h1 mx-2">{"OSSE"}</a>
-                                <span class="navbar-text mb-0">{"| Your favorite independent search engine."}</span>
-                            </div>
-                            <a href="https://github.com/Baitinq" class="navbar-text mb-0">{"Made by Baitinq"}</a>
+            <header>
+                <nav class="navbar bg-light sticky-top">
+                    <div class="container-fluid">
+                        <div>
+                            <a href="https://github.com/Baitinq/OSSE" class="navbar-brand h1 mx-2">{"OSSE"}</a>
+                            <span class="navbar-text mb-0">{"| Your favorite independent search engine."}</span>
                         </div>
-                    </nav>
-                </header>
+                        <a href="https://github.com/Baitinq" class="navbar-text">{"Made by Baitinq"}</a>
+                    </div>
+                </nav>
+            </header>
+            <main style="display: flex; flex-direction: column; min-height: 100vh; align-items: center; justify-content: center;">
                 //SET AT MIDDLE OF VIEWPORT IF NO SEARCHING AND TOP 25% IF SEARCHING
-                <main class="container">
+                <div class="container">
                     <div class="row">
                         <div class="col">
-                                <b class="display-4">{"OSSE"}</b>
-                                <p>{"Your favorite independent search engine."}</p>
-                                <form onsubmit={on_submit}>
-                                    <div class="input-group input-group-lg my-2">
-                                        <input oninput={search_query_changed} value={curr_state.search_query}type="text" class="form-control" placeholder="Search with OSSE" />
-                                        <button class="btn btn-primary" type="submit" >{"Search!"}</button>
-                                    </div>
-                                </form>
+                                <section class="my-5">
+                                    <b class="display-4">{"OSSE"}</b>
+                                    <p>{"Your favorite independent search engine."}</p>
+                                    <form onsubmit={on_submit}>
+                                        <div class="input-group input-group-lg my-2">
+                                            <input oninput={search_query_changed} value={curr_state.search_query}type="text" class="form-control" placeholder="Search with OSSE" />
+                                            <button class="btn btn-primary" type="submit" >{"Search!"}</button>
+                                        </div>
+                                    </form>
+                                </section>
                                 <section>
                                     {display_results(&curr_state.results)}
                                 </section>
                         </div>
                     </div>
-                </main>
-                <footer style={"margin-top: auto"}>
-                    <nav class="navbar bg-light">
-                        <div class="container-fluid">
-                            <div>
-                                <a href="https://github.com/Baitinq/OSSE" class="navbar-brand mb-0 h1 mx-2">{"OSSE"}</a>
-                                <span class="navbar-text mb-0">{"| Your favorite independent search engine."}</span>
-                            </div>
-                            <a href="https://github.com/Baitinq" class="navbar-text mb-0">{"Made by Baitinq"}</a>
+                </div>
+            </main>
+            <footer class="mt-5">
+                <nav class="navbar bg-light">
+                    <div class="container-fluid">
+                        <div>
+                            <a href="https://github.com/Baitinq/OSSE" class="navbar-brand h1 mx-2">{"OSSE"}</a>
+                            <span class="navbar-text mb-0">{"| Your favorite independent search engine."}</span>
                         </div>
-                    </nav>
-                </footer>
-            </div>
+                        <a href="https://github.com/Baitinq" class="navbar-text">{"Made by Baitinq"}</a>
+                    </div>
+                </nav>
+            </footer>
         </>
     }
 }
@@ -183,7 +186,7 @@ fn osse() -> Html {
 fn app() -> Html {
     html! {
     <>
-        <OSSE/>
+        <OSSE />
     </>
     }
 }
