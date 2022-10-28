@@ -35,7 +35,7 @@ impl PartialOrd for CrawledResource {
 
 impl Ord for CrawledResource {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.priority.cmp(&other.priority)
+        self.priority.cmp(&other.priority).reverse()
     }
 }
 
@@ -74,7 +74,7 @@ fn osse() -> Html {
                     html! {
                         <div key={r.url.to_owned()}>
                         //Show page title and description
-                            <a href={r.url.to_owned()}>{r.url.to_owned()}{"--"}{r.title.to_owned()}{"----"}{r.description.to_owned()}</a>
+                            <a href={r.url.to_owned()}>{r.url.to_owned()}{"--"}{r.title.to_owned()}{"----"}{r.description.to_owned()}{format!("PRIO: {}", r.priority)}</a>
                         </div>
                     }
                 })
