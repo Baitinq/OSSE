@@ -120,45 +120,47 @@ fn osse() -> Html {
 
     html! {
         <>
-            <header>
-                <nav class="navbar bg-light sticky-top">
-                    <div class="container-fluid">
-                        <div>
-                            <a href="https://github.com/Baitinq/OSSE" class="navbar-brand mb-0 h1 mx-2">{"OSSE"}</a>
-                            <span class="navbar-text mb-0">{"| Your favorite independent search engine."}</span>
+            <div style={"display: flex; flex-direction: column; min-height: 100vh;"}>
+                <header>
+                    <nav class="navbar bg-light sticky-top">
+                        <div class="container-fluid">
+                            <div>
+                                <a href="https://github.com/Baitinq/OSSE" class="navbar-brand mb-0 h1 mx-2">{"OSSE"}</a>
+                                <span class="navbar-text mb-0">{"| Your favorite independent search engine."}</span>
+                            </div>
+                            <a href="https://github.com/Baitinq" class="navbar-text mb-0">{"Made by Baitinq"}</a>
                         </div>
-                        <a href="https://github.com/Baitinq" class="navbar-text mb-0">{"Made by Baitinq"}</a>
-                    </div>
-                </nav>
-            </header>
-            <main class="container d-flex h-100">
-                <div class="row align-self-center w-100">
-                    <div class="col">
-                            <b class="display-4">{"OSSE"}</b>
-                            <p>{"Your favorite independent search engine."}</p>
-                            <form onsubmit={on_submit}>
-                                <div class="input-group input-group-lg my-2">
-                                    <input oninput={search_query_changed} value={curr_state.search_query}type="text" class="form-control" placeholder="Search with OSSE" />
-                                    <button class="btn btn-primary" type="submit" >{"Search!"}</button>
-                                </div>
-                            </form>
-                            <section>
-                                {display_results(&curr_state.results)}
-                            </section>
-                    </div>
-                </div>
-            </main>
-            <footer>
-                <nav class="navbar bg-light bottom">
-                    <div class="container-fluid">
-                        <div>
-                            <a href="https://github.com/Baitinq/OSSE" class="navbar-brand mb-0 h1 mx-2">{"OSSE"}</a>
-                            <span class="navbar-text mb-0">{"| Your favorite independent search engine."}</span>
+                    </nav>
+                </header>
+                <main class="container">
+                    <div class="row">
+                        <div class="col">
+                                <b class="display-4">{"OSSE"}</b>
+                                <p>{"Your favorite independent search engine."}</p>
+                                <form onsubmit={on_submit}>
+                                    <div class="input-group input-group-lg my-2">
+                                        <input oninput={search_query_changed} value={curr_state.search_query}type="text" class="form-control" placeholder="Search with OSSE" />
+                                        <button class="btn btn-primary" type="submit" >{"Search!"}</button>
+                                    </div>
+                                </form>
+                                <section>
+                                    {display_results(&curr_state.results)}
+                                </section>
                         </div>
-                        <a href="https://github.com/Baitinq" class="navbar-text mb-0">{"Made by Baitinq"}</a>
                     </div>
-                </nav>
-            </footer>
+                </main>
+                <footer style={"margin-top: auto"}>
+                    <nav class="navbar bg-light">
+                        <div class="container-fluid">
+                            <div>
+                                <a href="https://github.com/Baitinq/OSSE" class="navbar-brand mb-0 h1 mx-2">{"OSSE"}</a>
+                                <span class="navbar-text mb-0">{"| Your favorite independent search engine."}</span>
+                            </div>
+                            <a href="https://github.com/Baitinq" class="navbar-text mb-0">{"Made by Baitinq"}</a>
+                        </div>
+                    </nav>
+                </footer>
+            </div>
         </>
     }
 }
