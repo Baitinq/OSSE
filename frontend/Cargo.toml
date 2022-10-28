@@ -14,3 +14,4 @@ gloo-net = "0.2"
 serde = { version = "1.0", features = ["derive", "rc"] }
 wasm-bindgen-futures = "0.4"
 itertools = "0.10.5"
+scraper = "0.12.0"

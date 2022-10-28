@@ -9,7 +9,9 @@ use std::sync::{Arc, Mutex};
 #[derive(Debug, Clone, Serialize)]
 struct CrawledResource {
     url: String,
-    priority: u32, //how do we even calculate this
+    title: String,
+    description: String,
+    priority: u32,
     word: Arc<String>,
 }
 
@@ -56,6 +58,7 @@ async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
     .await
 }
 
+//we need to rename stuff
 #[derive(Deserialize, Debug)]
 struct Resource {
     url: String,
@@ -65,6 +68,8 @@ struct Resource {
 #[post("/resource")]
 async fn add_resource(data: web::Data<AppState>, resource: web::Json<Resource>) -> impl Responder {
     //parse content
+    let document = scraper::Html::parse_document(resource.content.as_str());
+
     let text = html2text::from_read(resource.content.as_str().as_bytes(), resource.content.len());
 
     let split_words = text.split(' ');
@@ -78,6 +83,22 @@ async fn add_resource(data: web::Data<AppState>, resource: web::Json<Resource>) 
 
     println!("xd: {:?}", fixed_words);
 
+    let title_selector = scraper::Selector::parse("title").unwrap();
+    let description_selector = scraper::Selector::parse("meta").unwrap();
+
+    let page_title: String = document
+        .select(&title_selector)
+        .map(|e| e.inner_html())
+        .take(1)
+        .collect();
+
+    let page_description: String = document
+        .select(&description_selector)
+        .filter(|e| e.value().attr("name") == Some("description"))
+        .filter_map(|e| e.value().attr("content"))
+        .take(1)
+        .collect();
+
     //and for each changed content word we add it to the db (word -> list.append(url))
     let mut database = data.database.lock().unwrap();
     for word in fixed_words {
@@ -85,6 +106,8 @@ async fn add_resource(data: web::Data<AppState>, resource: web::Json<Resource>) 
             url: resource.url.clone(),
             priority: calculate_word_priority(&word, resource.content.as_str()),
             word: Arc::new(word.clone()),
+            title: page_title.clone(),
+            description: page_description.clone(),
         };
 
         match database.get_mut(&word) {
