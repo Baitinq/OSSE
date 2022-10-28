@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use rand::seq::IteratorRandom;
-use reqwest::{Client, Response};
+use reqwest::{Client, Response, StatusCode};
 use serde::Serialize;
 use url::Url;
 
@@ -81,13 +81,14 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
     let url = Url::parse(url).unwrap();
 
     let response_text = match http_client.get(url.as_str()).send().await {
-        Err(_) => Err("Error fetching ".to_owned() + url.as_str()),
-        Ok(text_res) => match text_res.text().await {
+        Ok(text_res) if text_res.status() == StatusCode::OK => match text_res.text().await {
             Err(_) => {
                 Err("Error unwrapping the fetched HTML's text (".to_owned() + url.as_str() + ")")
             }
             Ok(text) => Ok(text),
         },
+
+        _ => Err("Error fetching ".to_owned() + url.as_str()),
     }?;
 
     let document = scraper::Html::parse_document(response_text.as_str());
