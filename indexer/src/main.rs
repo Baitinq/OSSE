@@ -1,6 +1,5 @@
 use actix_cors::Cors;
 use actix_web::{get, post, web, App, HttpServer, Responder};
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
@@ -101,16 +100,16 @@ async fn add_resource(data: web::Data<AppState>, resource: web::Json<Resource>) 
 
     //and for each changed content word we add it to the db (word -> list.append(url))
     let mut database = data.database.lock().unwrap();
-    for word in fixed_words {
+    for word in &fixed_words {
         let resource_to_add = CrawledResource {
             url: resource.url.clone(),
-            priority: calculate_word_priority(&word, resource.content.as_str()),
+            priority: calculate_word_priority(word, resource.content.as_str(), &fixed_words),
             word: Arc::new(word.clone()),
             title: page_title.clone(),
             description: page_description.clone(),
         };
 
-        match database.get_mut(&word) {
+        match database.get_mut(word) {
             Some(resources) => _ = resources.insert(resource_to_add),
             None => _ = database.insert(word.clone(), HashSet::from([resource_to_add])),
         }
@@ -163,7 +162,7 @@ fn search_word_in_db(
     db.get(&word)
 }
 
-//TODO!
-fn calculate_word_priority(_word: &str, _html_site: &str) -> u32 {
-    rand::thread_rng().gen::<u32>()
+fn calculate_word_priority(word: &str, _html_site: &str, words: &[String]) -> u32 {
+    //atm priority is just the number of occurences in the site.
+    words.iter().filter(|w| *w == word).count() as u32
 }
