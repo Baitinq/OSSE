@@ -99,6 +99,7 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
         u if !(u.scheme() == "http" || u.scheme() == "https") => false,
         u if u.fragment().is_some() => false, //no # urls
         u if u.query().is_some() => false,    //no ? urls
+        u if u.path_segments().is_some() && u.path_segments().unwrap().count() > 4 => false, // max "crawling depth" is 4
         u if *u == url => false,              //no same url
         _ => true,
     };
