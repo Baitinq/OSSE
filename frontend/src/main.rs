@@ -1,50 +1,9 @@
-use gloo::console::log;
 use gloo_net::http::Request;
 use itertools::Itertools;
-use serde::Deserialize;
-use std::cmp::Ordering;
-use std::hash::{Hash, Hasher};
-use std::{ops::Deref, sync::Arc};
 use wasm_bindgen::*;
 use web_sys::{EventTarget, HtmlInputElement};
 use yew::prelude::*;
-
-//TODO: we should import this from the indexer
-#[derive(Debug, Clone, Deserialize)]
-pub struct IndexedResource {
-    url: String,
-    title: String,
-    description: String,
-    priority: u32,
-    word: Arc<String>,
-}
-
-//We implement PartialEq, Eq and Hash to ignore the priority field.
-impl PartialEq for IndexedResource {
-    fn eq(&self, other: &Self) -> bool {
-        self.url == other.url && self.word == other.word
-    }
-}
-impl Eq for IndexedResource {}
-
-impl PartialOrd for IndexedResource {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for IndexedResource {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.priority.cmp(&other.priority).reverse()
-    }
-}
-
-impl Hash for IndexedResource {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.url.hash(state);
-        self.word.hash(state);
-    }
-}
+use lib::lib::*;
 
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct ResultComponentProps {
@@ -65,7 +24,7 @@ pub struct OSSE {
     pub results: Option<Vec<IndexedResource>>, //TODO: some loading?
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct OSSEProps {
     pub api_endpoint: String,
 }

@@ -1,8 +1,8 @@
 use itertools::Itertools;
 use rand::seq::IteratorRandom;
 use reqwest::{Client, Response, StatusCode};
-use serde::Serialize;
 use url::Url;
+use lib::lib::*;
 
 #[tokio::main]
 async fn main() {
@@ -136,12 +136,6 @@ async fn push_crawl_entry_to_indexer(
     content: String,
 ) -> Result<Response, String> {
     dbg!("Pushin to indexer");
-
-    #[derive(Serialize, Debug)]
-    struct CrawledResource {
-        url: String,
-        content: String,
-    }
 
     let request_body = CrawledResource { url, content };
 

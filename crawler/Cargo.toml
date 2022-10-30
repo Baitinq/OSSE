@@ -14,6 +14,7 @@ tokio = { version = "0.2.22", features = ["full"] }
 async-channel = "1.7.1"
 url = "2.3.1"
 rand = "0.7.3"
+lib = { path = "../lib" }
 
 [[bin]]
 name = "crawler"

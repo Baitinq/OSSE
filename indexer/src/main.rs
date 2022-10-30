@@ -1,32 +1,8 @@
 use actix_cors::Cors;
 use actix_web::{get, post, web, App, HttpServer, Responder};
-use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::hash::{Hash, Hasher};
 use std::sync::{Arc, Mutex};
-
-#[derive(Debug, Clone, Serialize)]
-struct IndexedResource {
-    url: String,
-    title: String,
-    description: String,
-    priority: u32,
-    word: Arc<String>,
-}
-
-//We implement PartialEq, Eq and Hash to ignore the priority field.
-impl PartialEq for IndexedResource {
-    fn eq(&self, other: &Self) -> bool {
-        self.url == other.url && self.word == other.word
-    }
-}
-impl Eq for IndexedResource {}
-impl Hash for IndexedResource {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.url.hash(state);
-        self.word.hash(state);
-    }
-}
+use lib::lib::*;
 
 struct AppState {
     database: Mutex<HashMap<String, HashSet<IndexedResource>>>,
@@ -58,13 +34,6 @@ async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
 }
 
 //TODO: sufficiently simmilar word in search (algorithm)
-//we need to rename stuff
-#[derive(Deserialize, Debug)]
-struct CrawledResource {
-    url: String,
-    content: String,
-}
-
 #[post("/resource")]
 async fn add_resource(
     data: web::Data<AppState>,

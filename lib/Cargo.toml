@@ -1,20 +1,9 @@
 [package]
-name = "indexer"
+name = "lib"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = "4.2.1"
-actix-cors = "0.6.3"
 serde = { version = "1.0", features = ["derive"] }
-scraper = "0.12.0"
-html2text = "0.4.3"
-rand = "0.7.3"
-serde_json = "1.0.87"
-lib = { path = "../lib" }
-
-[[bin]]
-name = "indexer"
-path = "src/main.rs"
