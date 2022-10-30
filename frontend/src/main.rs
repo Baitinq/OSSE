@@ -54,99 +54,110 @@ pub struct ResultComponentProps {
 #[function_component(ResultComponent)]
 fn result_component(props: &ResultComponentProps) -> Html {
     html! {
-        <a href={props.result.url.clone()}>{props.result.url.clone()}{"--"}{props.result.title.clone()}{"----"}{props.result.description.clone()}{format!("PRIO: {}", props.result.priority)}</a>
+        <a href={props.result.url.clone()}>
+            {props.result.url.clone()}{"--"}{props.result.title.clone()}{"----"}{props.result.description.clone()}{format!("PRIO: {}", props.result.priority)}
+        </a>
     }
 }
 
-#[derive(Debug, Clone)]
-struct State {
+pub struct OSSE {
     pub search_query: String,
     pub results: Option<Vec<IndexedResource>>, //TODO: some loading?
 }
 
-#[function_component(OSSE)]
-fn osse() -> Html {
-    let state = use_state(|| State {
-        search_query: "".to_string(),
-        results: None,
-    });
+pub enum OSSEMessage {
+    SearchSubmitted,
+    SearchChanged(String),
+    SearchFinished(Vec<IndexedResource>),
+}
 
-    let display_results = |maybe_results: &Option<Vec<IndexedResource>>| -> Html {
-        let maybe_results = maybe_results.as_ref();
-        if maybe_results.is_none() {
-            return html! {};
+impl Component for OSSE {
+    type Message = OSSEMessage;
+    type Properties = ();
+
+    fn create(_ctx: &Context<Self>) -> Self {
+        OSSE {
+            search_query: "".to_string(),
+            results: None,
         }
+    }
 
-        let results = maybe_results.unwrap();
-        if !results.is_empty() {
-            results
-                .iter()
-                .sorted()
-                .map(|r| {
-                    html! {
-                        <div key={r.url.to_owned()}>
-                            <ResultComponent result={r.clone()} />
-                        </div>
-                    }
-                })
-                .collect::<Html>()
-        } else {
-            html! {
-                <p>{"No results!"}</p>
-            }
-        }
-    };
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            OSSEMessage::SearchSubmitted => {
+                let search_query = self.search_query.clone();
+                ctx.link().send_future(async move {
+                    let endpoint = format!("http://127.0.0.1:4444/search/{}", search_query);
 
-    let search_query_changed = {
-        let cloned_state = state.clone();
-        Callback::from(move |event: InputEvent| {
-            let target: EventTarget = event
-                .target()
-                .expect("Event should have a target when dispatched");
-            let input = target.unchecked_into::<HtmlInputElement>().value();
-            log!("Input changed: {}", &input);
-            let mut state = cloned_state.deref().clone();
-            state.search_query = input;
-            cloned_state.set(state);
-        })
-    };
+                    let fetched_response = Request::get(endpoint.as_str()).send().await.unwrap();
 
-    let on_submit = {
-        let cloned_state = state.clone();
-
-        Callback::from(move |event: FocusEvent| {
-            event.prevent_default();
-            let state = cloned_state.deref().clone();
-
-            //fetch
-            {
-                let cloned_state = cloned_state.clone();
-                wasm_bindgen_futures::spawn_local(async move {
-                    let mut state = cloned_state.deref().clone();
-                    //TODO: what if its on another host
-                    let endpoint = format!("http://127.0.0.1:4444/search/{}", &state.search_query);
-
-                    let fetched_results = Request::get(endpoint.as_str()).send().await.unwrap();
-
-                    let fetched_json: Vec<IndexedResource> = match fetched_results.json().await {
+                    let fetched_results: Vec<IndexedResource> = match fetched_response.json().await {
                         Err(e) => panic!("Im panic: {}", e),
                         Ok(json) => json,
                     };
 
-                    state.results = Some(fetched_json);
-
-                    cloned_state.set(state);
+                    OSSEMessage::SearchFinished(fetched_results)
                 });
+                
+                false
+            },
+            OSSEMessage::SearchChanged(search_query) => {
+                self.search_query = search_query;
+
+                true
+            },
+            OSSEMessage::SearchFinished(search_results) => {
+                self.results = Some(search_results);
+
+                true
+            },
+        }
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let onsubmit = ctx.link().callback(|event: FocusEvent| {
+            event.prevent_default();
+
+            OSSEMessage::SearchSubmitted
+        });
+
+        let oninput = ctx.link().callback(|event: InputEvent| {
+            let target: EventTarget = event
+                .target()
+                .expect("Event should have a target when dispatched");
+            let input = target.unchecked_into::<HtmlInputElement>().value();
+
+            OSSEMessage::SearchChanged(input)
+        });
+
+        let display_results = |maybe_results: &Option<Vec<IndexedResource>>| -> Html {
+            let maybe_results = maybe_results.as_ref();
+            if maybe_results.is_none() {
+                return html! {};
             }
 
-            log!("Submit: {}", state.search_query);
-        })
-    };
+            let results = maybe_results.unwrap();
+            if !results.is_empty() {
+                results
+                    .iter()
+                    .sorted()
+                    .map(|r| {
+                        html! {
+                            <div key={r.url.to_owned()}>
+                                <ResultComponent result={r.clone()} />
+                            </div>
+                        }
+                    })
+                    .collect::<Html>()
+            } else {
+                html! {
+                    <p>{"No results!"}</p>
+                }
+            }
+        };
 
-    let curr_state = state.deref().to_owned();
-
-    html! {
-        <>
+        html! {
+            <>
             <header>
                 <nav class="navbar bg-light sticky-top">
                     <div class="container-fluid">
@@ -166,15 +177,15 @@ fn osse() -> Html {
                                 <section class="my-5">
                                     <b class="display-4">{"OSSE"}</b>
                                     <p>{"Your favorite independent search engine."}</p>
-                                    <form onsubmit={on_submit}>
+                                    <form {onsubmit}>
                                         <div class="input-group input-group-lg my-2">
-                                            <input oninput={search_query_changed} value={curr_state.search_query}type="text" class="form-control" placeholder="Search with OSSE" />
+                                            <input {oninput} value={self.search_query.clone()}type="text" class="form-control" placeholder="Search with OSSE" />
                                             <button class="btn btn-primary" type="submit" >{"Search!"}</button>
                                         </div>
                                     </form>
                                 </section>
                                 <section>
-                                    {display_results(&curr_state.results)}
+                                    {display_results(&self.results)}
                                 </section>
                         </div>
                     </div>
@@ -192,6 +203,7 @@ fn osse() -> Html {
                 </nav>
             </footer>
         </>
+        }
     }
 }
 
