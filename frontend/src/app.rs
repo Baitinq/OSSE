@@ -4,6 +4,8 @@ use wasm_bindgen::*;
 use web_sys::{EventTarget, HtmlInputElement};
 use yew::prelude::*;
 use lib::lib::*;
+use yew_router::scope_ext::RouterScopeExt;
+use crate::Route;
 
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct ResultComponentProps {
@@ -29,6 +31,7 @@ pub struct OSSE {
 #[derive(Properties, PartialEq, Eq)]
 pub struct OSSEProps {
     pub api_endpoint: String,
+    pub initial_search_query: Option<String>,
 }
 
 pub enum OSSEMessage {
@@ -41,9 +44,31 @@ impl Component for OSSE {
     type Message = OSSEMessage;
     type Properties = OSSEProps;
 
+    //TODO: No code duplication for fetching in create() and update() - NEED TO URL ENCODE AND DECODE SEARCH QUERY
     fn create(ctx: &Context<Self>) -> Self {
+        let mut search_query = String::from("");
+
+        //we push an update message if inital_search_query is not none
+        if let Some(initial_search_query) = ctx.props().initial_search_query.clone() {
+            search_query = initial_search_query.clone();
+
+            let api_endpoint = ctx.props().api_endpoint.clone();
+            ctx.link().send_future(async move {
+                let endpoint = format!("{}/search/{}", api_endpoint, initial_search_query);
+
+                let fetched_response = Request::get(endpoint.as_str()).send().await.unwrap();
+
+                let fetched_results: Vec<IndexedResource> = match fetched_response.json().await {
+                    Err(e) => panic!("Im panic: {}", e),
+                    Ok(json) => json,
+                };
+
+                OSSEMessage::SearchFinished(fetched_results)
+            });
+        }
+
         OSSE {
-            search_query: "".to_string(),
+            search_query,
             results: None,
         }
     }
@@ -51,8 +76,12 @@ impl Component for OSSE {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             OSSEMessage::SearchSubmitted => {
-                let search_query = self.search_query.clone();
                 let api_endpoint = ctx.props().api_endpoint.clone();
+                let search_query = self.search_query.clone();
+                let navigator = ctx.link().navigator().unwrap();
+
+                navigator.push(&Route::OSSESearch { query: search_query.clone() });
+
                 ctx.link().send_future(async move {
                     let endpoint = format!("{}/search/{}", api_endpoint, search_query);
 
@@ -65,7 +94,7 @@ impl Component for OSSE {
 
                     OSSEMessage::SearchFinished(fetched_results)
                 });
-                
+
                 false
             },
             OSSEMessage::SearchChanged(search_query) => {
