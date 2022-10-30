@@ -1,9 +1,9 @@
 pub mod lib {
 
-    use serde::{Serialize,Deserialize};
-    use std::sync::Arc;
-    use std::hash::{Hash, Hasher};
+    use serde::{Deserialize, Serialize};
     use std::cmp::Ordering;
+    use std::hash::{Hash, Hasher};
+    use std::sync::Arc;
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct CrawledResource {
@@ -47,5 +47,4 @@ pub mod lib {
             self.word.hash(state);
         }
     }
-
 }

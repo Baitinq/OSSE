@@ -1,9 +1,9 @@
 use actix_cors::Cors;
 use actix_web::{get, post, web, App, HttpServer, Responder};
+use kuchiki::traits::TendrilSink;
+use lib::lib::*;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
-use lib::lib::*;
-use kuchiki::traits::TendrilSink;
 
 struct AppState {
     database: Mutex<HashMap<String, HashSet<IndexedResource>>>,

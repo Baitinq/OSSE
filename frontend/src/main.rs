@@ -1,9 +1,8 @@
 mod app;
 
+use app::OSSE;
 use yew::prelude::*;
 use yew_router::prelude::*;
-use app::OSSE;
-
 
 #[derive(Clone, Routable, PartialEq)]
 enum Route {

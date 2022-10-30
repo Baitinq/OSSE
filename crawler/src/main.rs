@@ -1,8 +1,8 @@
 use itertools::Itertools;
+use lib::lib::*;
 use rand::seq::IteratorRandom;
 use reqwest::{Client, Response, StatusCode};
 use url::Url;
-use lib::lib::*;
 
 #[tokio::main]
 async fn main() {
@@ -18,12 +18,12 @@ async fn main() {
     crawler(http_client, root_urls, max_queue_size).await;
 }
 
-//TODO: crawling depth? - async http client
 async fn crawler(http_client: Client, root_urls: Vec<&str>, max_queue_size: usize) {
     dbg!("Starting to crawl!");
 
-    //add root urls to queue - TODO: max q size
-    let (tx_crawling_queue, rx_crawling_queue) = async_channel::bounded::<String>(std::cmp::max(max_queue_size, root_urls.len()));
+    //add root urls to queue
+    let (tx_crawling_queue, rx_crawling_queue) =
+        async_channel::bounded::<String>(std::cmp::max(max_queue_size, root_urls.len()));
     for url in root_urls {
         tx_crawling_queue.send(url.to_string()).await.unwrap();
     }
@@ -47,7 +47,7 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>, max_queue_size: usiz
 
             //DONT FORGET ENUMS
             //CAN WE DO UNWRAP OR RETURN or lambda
-            //HOW TF DOES CRAWLER WORK. DOESNT QUEUE FILL. LOTS OF WAITING THINGS??
+            //HOW DOES CRAWLER WORK. DOESNT QUEUE FILL. LOTS OF WAITING THINGS??
 
             //dbg!("Content: {:?}", &content);
             dbg!("Next urls: {:?}", &crawled_urls);
@@ -100,7 +100,7 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
         u if u.fragment().is_some() => false, //no # urls
         u if u.query().is_some() => false,    //no ? urls
         u if u.path_segments().is_some() && u.path_segments().unwrap().count() > 4 => false, // max "crawling depth" is 4
-        u if *u == url => false,              //no same url
+        u if *u == url => false, //no same url
         _ => true,
     };
 

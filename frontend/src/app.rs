@@ -1,11 +1,11 @@
+use crate::Route;
 use gloo_net::http::Request;
 use itertools::Itertools;
+use lib::lib::*;
 use wasm_bindgen::*;
 use web_sys::{EventTarget, HtmlInputElement};
 use yew::prelude::*;
-use lib::lib::*;
 use yew_router::scope_ext::RouterScopeExt;
-use crate::Route;
 
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct ResultComponentProps {
@@ -34,6 +34,7 @@ pub struct OSSEProps {
     pub initial_search_query: Option<String>,
 }
 
+//TODO: Error
 pub enum OSSEMessage {
     SearchSubmitted,
     SearchChanged(String),
@@ -44,7 +45,7 @@ impl Component for OSSE {
     type Message = OSSEMessage;
     type Properties = OSSEProps;
 
-    //TODO: No code duplication for fetching in create() and update() - NEED TO URL ENCODE AND DECODE SEARCH QUERY
+    //TODO: No code duplication for fetching in create() and update()
     fn create(ctx: &Context<Self>) -> Self {
         let mut search_query = String::from("");
 
@@ -68,7 +69,10 @@ impl Component for OSSE {
         }
 
         OSSE {
-            search_query: urlencoding::decode(search_query.as_str()).to_owned().unwrap().to_string(),
+            search_query: urlencoding::decode(search_query.as_str())
+                .to_owned()
+                .unwrap()
+                .to_string(),
             results: None,
         }
     }
@@ -80,14 +84,17 @@ impl Component for OSSE {
                 let search_query = self.search_query.clone();
                 let navigator = ctx.link().navigator().unwrap();
 
-                navigator.push(&Route::OSSESearch { query: urlencoding::encode(search_query.as_str()).to_string() });
+                navigator.push(&Route::OSSESearch {
+                    query: urlencoding::encode(search_query.as_str()).to_string(),
+                });
 
                 ctx.link().send_future(async move {
                     let endpoint = format!("{}/search/{}", api_endpoint, search_query);
 
                     let fetched_response = Request::get(endpoint.as_str()).send().await.unwrap();
 
-                    let fetched_results: Vec<IndexedResource> = match fetched_response.json().await {
+                    let fetched_results: Vec<IndexedResource> = match fetched_response.json().await
+                    {
                         Err(e) => panic!("Im panic: {}", e),
                         Ok(json) => json,
                     };
@@ -96,17 +103,17 @@ impl Component for OSSE {
                 });
 
                 false
-            },
+            }
             OSSEMessage::SearchChanged(search_query) => {
                 self.search_query = search_query;
 
                 true
-            },
+            }
             OSSEMessage::SearchFinished(search_results) => {
                 self.results = Some(search_results);
 
                 true
-            },
+            }
         }
     }
 
