@@ -124,6 +124,7 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
     //i dont understand dbg! (how to print {})
     //is there empty urls?
     //user agent?
+    //frontend: search/query and redirect
 
     println!("Returning next urls, {:?}", next_urls);
     Ok((response_text, next_urls))
