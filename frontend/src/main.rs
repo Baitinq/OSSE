@@ -65,6 +65,11 @@ pub struct OSSE {
     pub results: Option<Vec<IndexedResource>>, //TODO: some loading?
 }
 
+#[derive(Properties, PartialEq)]
+pub struct OSSEProps {
+    pub api_endpoint: String,
+}
+
 pub enum OSSEMessage {
     SearchSubmitted,
     SearchChanged(String),
@@ -73,7 +78,7 @@ pub enum OSSEMessage {
 
 impl Component for OSSE {
     type Message = OSSEMessage;
-    type Properties = ();
+    type Properties = OSSEProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
         OSSE {
@@ -86,8 +91,9 @@ impl Component for OSSE {
         match msg {
             OSSEMessage::SearchSubmitted => {
                 let search_query = self.search_query.clone();
+                let api_endpoint = ctx.props().api_endpoint.clone();
                 ctx.link().send_future(async move {
-                    let endpoint = format!("http://127.0.0.1:4444/search/{}", search_query);
+                    let endpoint = format!("{}/search/{}", api_endpoint, search_query);
 
                     let fetched_response = Request::get(endpoint.as_str()).send().await.unwrap();
 
@@ -211,7 +217,7 @@ impl Component for OSSE {
 fn app() -> Html {
     html! {
     <>
-        <OSSE />
+        <OSSE api_endpoint={"http://127.0.0.1:4444"}/>
     </>
     }
 }
