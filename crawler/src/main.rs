@@ -11,17 +11,19 @@ async fn main() {
     let root_urls = include_str!("../top-1000-websites.txt");
     let root_urls = root_urls.split('\n').collect();
 
+    let max_queue_size = 2222;
+
     let http_client = reqwest::Client::new();
 
-    crawler(http_client, root_urls).await;
+    crawler(http_client, root_urls, max_queue_size).await;
 }
 
 //TODO: crawling depth? - async http client
-async fn crawler(http_client: Client, root_urls: Vec<&str>) {
+async fn crawler(http_client: Client, root_urls: Vec<&str>, max_queue_size: usize) {
     dbg!("Starting to crawl!");
 
     //add root urls to queue - TODO: max q size
-    let (tx_crawling_queue, rx_crawling_queue) = async_channel::bounded::<String>(2222);
+    let (tx_crawling_queue, rx_crawling_queue) = async_channel::bounded::<String>(std::cmp::max(max_queue_size, root_urls.len()));
     for url in root_urls {
         tx_crawling_queue.send(url.to_string()).await.unwrap();
     }
