@@ -106,6 +106,9 @@ async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Resp
     //percentage of valid words
     let mut valid_results: Option<HashSet<IndexedResource>> = None;
     for w in query {
+        //Normalise queries to lowercase
+        let w = w.to_ascii_lowercase();
+
         let curr_word_results = match search_word_in_db(&database, w.to_string()) {
             None => return "[]".to_string(),
             Some(curr_results) => curr_results,
