@@ -3,6 +3,7 @@ use actix_web::{get, post, web, App, HttpServer, Responder};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use lib::lib::*;
+use kuchiki::traits::TendrilSink;
 
 struct AppState {
     database: Mutex<HashMap<String, HashSet<IndexedResource>>>,
@@ -41,17 +42,28 @@ async fn add_resource(
 ) -> impl Responder {
     //parse content
     let document = scraper::Html::parse_document(resource.content.as_str());
+    let kuchiki_parser = kuchiki::parse_html().one(resource.content.as_str());
 
-    //TODO: Not very good, can we just body.get_text()?
-    let text = html2text::from_read(resource.content.as_str().as_bytes(), resource.content.len());
+    //remove script, style and noscript tags
+    kuchiki_parser
+        .inclusive_descendants()
+        .filter(|node| {
+            node.as_element().map_or(false, |e| {
+                matches!(e.name.local.as_ref(), "script" | "style" | "noscript")
+            })
+        })
+        .collect::<Vec<_>>()
+        .iter()
+        .for_each(|node| node.detach());
+
+    let text = kuchiki_parser.text_contents();
 
     let split_words = text.split(' ');
 
     //fixup words (remove words with non alphabetic chars, empty words, transform to lowercase...)
     let fixed_words: Vec<String> = split_words
-        .filter(|w| !w.chars().any(|c| !c.is_ascii_alphabetic()))
-        .filter(|w| !w.is_empty() && *w != " ")
-        .map(|w| w.to_ascii_lowercase())
+        .map(|w| w.to_ascii_lowercase().split_whitespace().collect())
+        .filter(|w: &String| !w.is_empty())
         .collect();
 
     println!("xd: {:?}", fixed_words);
