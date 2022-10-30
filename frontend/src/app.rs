@@ -82,7 +82,7 @@ impl Component for OSSE {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let onsubmit = ctx.link().callback(|event: FocusEvent| {
+        let onsubmit = ctx.link().callback(|event: SubmitEvent| {
             event.prevent_default();
 
             OSSEMessage::SearchSubmitted
