@@ -1,4 +1,5 @@
 pub mod lib {
+
     use serde::{Serialize,Deserialize};
     use std::sync::Arc;
     use std::hash::{Hash, Hasher};
@@ -33,6 +34,7 @@ pub mod lib {
         }
     }
 
+    //Reverse ordering as priority: 1 is less than priority: 2
     impl Ord for IndexedResource {
         fn cmp(&self, other: &Self) -> Ordering {
             self.priority.cmp(&other.priority).reverse()
@@ -45,6 +47,5 @@ pub mod lib {
             self.word.hash(state);
         }
     }
-
 
 }

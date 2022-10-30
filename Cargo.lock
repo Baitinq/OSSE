@@ -448,7 +448,6 @@ dependencies = [
  "rand 0.7.3",
  "reqwest",
  "scraper",
- "serde",
  "tokio 0.2.25",
  "url",
 ]
@@ -621,8 +620,6 @@ dependencies = [
  "gloo-net",
  "itertools",
  "lib",
- "scraper",
- "serde",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -1123,9 +1120,7 @@ dependencies = [
  "actix-web",
  "html2text",
  "lib",
- "rand 0.7.3",
  "scraper",
- "serde",
  "serde_json",
 ]
 
