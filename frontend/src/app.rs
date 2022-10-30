@@ -25,7 +25,7 @@ fn result_component(props: &ResultComponentProps) -> Html {
 
 pub struct OSSE {
     pub search_query: String,
-    pub results: Option<Vec<IndexedResource>>, //TODO: some loading?
+    pub results: Option<Result<Vec<IndexedResource>, String>>, //TODO: some loading?
 }
 
 #[derive(Properties, PartialEq, Eq)]
@@ -38,7 +38,7 @@ pub struct OSSEProps {
 pub enum OSSEMessage {
     SearchSubmitted,
     SearchChanged(String),
-    SearchFinished(Vec<IndexedResource>),
+    SearchFinished(Result<Vec<IndexedResource>, String>),
 }
 
 impl Component for OSSE {
@@ -57,17 +57,29 @@ impl Component for OSSE {
             ctx.link().send_future(async move {
                 let endpoint = format!("{}/search/{}", api_endpoint, initial_search_query);
 
-                let fetched_response = Request::get(endpoint.as_str()).send().await.unwrap();
+                let fetched_response = match Request::get(endpoint.as_str()).send().await {
+                    Ok(response) => response,
+                    Err(_) => {
+                        return OSSEMessage::SearchFinished(Err(
+                            "Failed to connect to the API!".to_string()
+                        ))
+                    }
+                };
 
                 let fetched_results: Vec<IndexedResource> = match fetched_response.json().await {
-                    Err(e) => panic!("Im panic: {}", e),
+                    Err(_) => {
+                        return OSSEMessage::SearchFinished(Err(
+                            "Internal API Error!".to_string()
+                        ))
+                    }
                     Ok(json) => json,
                 };
 
-                OSSEMessage::SearchFinished(fetched_results)
+                OSSEMessage::SearchFinished(Ok(fetched_results))
             });
         }
 
+        //WE may have data race between the future and the actual creation.
         OSSE {
             search_query: urlencoding::decode(search_query.as_str())
                 .to_owned()
@@ -91,15 +103,26 @@ impl Component for OSSE {
                 ctx.link().send_future(async move {
                     let endpoint = format!("{}/search/{}", api_endpoint, search_query);
 
-                    let fetched_response = Request::get(endpoint.as_str()).send().await.unwrap();
+                    let fetched_response = match Request::get(endpoint.as_str()).send().await {
+                        Ok(response) => response,
+                        Err(_) => {
+                            return OSSEMessage::SearchFinished(Err(
+                                "Failed to connect to the API!".to_string(),
+                            ))
+                        }
+                    };
 
                     let fetched_results: Vec<IndexedResource> = match fetched_response.json().await
                     {
-                        Err(e) => panic!("Im panic: {}", e),
+                        Err(_) => {
+                            return OSSEMessage::SearchFinished(Err(
+                                "Internal API Error!".to_string()
+                            ))
+                        }
                         Ok(json) => json,
                     };
 
-                    OSSEMessage::SearchFinished(fetched_results)
+                    OSSEMessage::SearchFinished(Ok(fetched_results))
                 });
 
                 false
@@ -110,7 +133,14 @@ impl Component for OSSE {
                 true
             }
             OSSEMessage::SearchFinished(search_results) => {
-                self.results = Some(search_results);
+                match search_results {
+                    Ok(results) => {
+                        self.results = Some(Ok(results));
+                    }
+                    Err(error) => {
+                        self.results = Some(Err(error));
+                    }
+                };
 
                 true
             }
@@ -133,31 +163,40 @@ impl Component for OSSE {
             OSSEMessage::SearchChanged(input)
         });
 
-        let display_results = |maybe_results: &Option<Vec<IndexedResource>>| -> Html {
-            let maybe_results = maybe_results.as_ref();
-            if maybe_results.is_none() {
-                return html! {};
-            }
-
-            let results = maybe_results.unwrap();
-            if !results.is_empty() {
-                results
-                    .iter()
-                    .sorted()
-                    .map(|r| {
-                        html! {
-                            <div key={r.url.to_owned()}>
-                                <ResultComponent result={r.clone()} />
-                            </div>
-                        }
-                    })
-                    .collect::<Html>()
-            } else {
-                html! {
-                    <p>{"No results!"}</p>
+        let display_results =
+            |maybe_results: &Option<Result<Vec<IndexedResource>, String>>| -> Html {
+                if maybe_results.is_none() {
+                    return html! {};
                 }
-            }
-        };
+
+                let results = maybe_results.as_ref().unwrap();
+
+                if results.is_err() {
+                    return html! {
+                        <p>{format!("ERROR: {}", results.as_ref().err().unwrap())}</p>
+                    };
+                }
+
+                let results = results.as_ref().unwrap();
+
+                if !results.is_empty() {
+                    results
+                        .iter()
+                        .sorted()
+                        .map(|r| {
+                            html! {
+                                <div key={r.url.to_owned()}>
+                                    <ResultComponent result={r.clone()} />
+                                </div>
+                            }
+                        })
+                        .collect::<Html>()
+                } else {
+                    html! {
+                        <p>{"No results!"}</p>
+                    }
+                }
+            };
 
         html! {
             <>
