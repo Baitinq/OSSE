@@ -68,7 +68,7 @@ impl Component for OSSE {
         }
 
         OSSE {
-            search_query,
+            search_query: urlencoding::decode(search_query.as_str()).to_owned().unwrap().to_string(),
             results: None,
         }
     }
@@ -80,7 +80,7 @@ impl Component for OSSE {
                 let search_query = self.search_query.clone();
                 let navigator = ctx.link().navigator().unwrap();
 
-                navigator.push(&Route::OSSESearch { query: search_query.clone() });
+                navigator.push(&Route::OSSESearch { query: urlencoding::encode(search_query.as_str()).to_string() });
 
                 ctx.link().send_future(async move {
                     let endpoint = format!("{}/search/{}", api_endpoint, search_query);
