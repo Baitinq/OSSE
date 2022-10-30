@@ -158,10 +158,10 @@ impl Component for OSSE {
                 <nav class="navbar bg-light sticky-top">
                     <div class="container-fluid">
                         <div>
-                            <a href="https://github.com/Baitinq/OSSE" class="navbar-brand h1 mx-2">{"OSSE"}</a>
+                            <a href="/" class="navbar-brand h1 mx-2">{"OSSE"}</a>
                             <span class="navbar-text mb-0">{"| Your favorite independent search engine."}</span>
                         </div>
-                        <a href="https://github.com/Baitinq" class="navbar-text">{"Made by Baitinq"}</a>
+                        <a href="https://github.com/Baitinq/OSSE" class="navbar-text">{"Made by Baitinq"}</a>
                     </div>
                 </nav>
             </header>
@@ -191,10 +191,10 @@ impl Component for OSSE {
                 <nav class="navbar bg-light">
                     <div class="container-fluid">
                         <div>
-                            <a href="https://github.com/Baitinq/OSSE" class="navbar-brand h1 mx-2">{"OSSE"}</a>
+                            <a href="/" class="navbar-brand h1 mx-2">{"OSSE"}</a>
                             <span class="navbar-text mb-0">{"| Your favorite independent search engine."}</span>
                         </div>
-                        <a href="https://github.com/Baitinq" class="navbar-text">{"Made by Baitinq"}</a>
+                        <a href="https://github.com/Baitinq/OSSE" class="navbar-text">{"Made by Baitinq"}</a>
                     </div>
                 </nav>
             </footer>
