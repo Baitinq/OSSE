@@ -1,12 +1,30 @@
+mod indexer_implementation;
+
 use actix_cors::Cors;
 use actix_web::{get, post, web, App, HttpServer, Responder};
+use indexer_implementation::IndexerImplementation;
 use kuchiki::traits::TendrilSink;
 use lib::lib::*;
-use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, Mutex};
+use std::collections::HashSet;
+use std::sync::Mutex;
+
+pub trait Indexer {
+    //too many args?
+    fn insert(
+        &mut self,
+        word: &str,
+        url: &str,
+        title: &str,
+        description: &str,
+        content: &str,
+        fixed_words: &[String],
+    ) -> Result<(), String>;
+    fn search(&self, term: &str) -> Result<HashSet<IndexedResource>, String>;
+    fn num_of_words(&self) -> usize;
+}
 
 struct AppState {
-    database: Mutex<HashMap<String, HashSet<IndexedResource>>>,
+    indexer: Mutex<Box<dyn Indexer + Send + Sync>>,
 }
 
 #[actix_web::main]
@@ -18,7 +36,7 @@ async fn main() -> std::io::Result<()> {
 
 async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
     let shared_state = web::Data::new(AppState {
-        database: Mutex::new(HashMap::new()),
+        indexer: Mutex::new(Box::new(IndexerImplementation::new())),
     });
     HttpServer::new(move || {
         let cors = Cors::permissive();
@@ -85,24 +103,23 @@ async fn add_resource(
         .collect();
 
     //and for each changed content word we add it to the db (word -> list.append(url))
-    let mut database = data.database.lock().unwrap();
+    let mut indexer = data.indexer.lock().unwrap();
     for word in &fixed_words {
-        let resource_to_add = IndexedResource {
-            url: resource.url.clone(),
-            priority: calculate_word_priority(word, resource.content.as_str(), &fixed_words),
-            word: Arc::new(word.clone()),
-            title: page_title.clone(),
-            description: page_description.clone(),
-        };
-
-        match database.get_mut(word) {
-            Some(resources) => _ = resources.insert(resource_to_add),
-            None => _ = database.insert(word.clone(), HashSet::from([resource_to_add])),
-        }
+        let _ = indexer.insert(
+            word,
+            &resource.url,
+            &page_title,
+            &page_description,
+            &resource.content,
+            &fixed_words,
+        );
     }
 
-    println!("Added resource! {:?}", database.len());
-    format!("{:?}", resource)
+    //TODO: ADD LANG? EN in meta tag (frontend)
+
+    println!("Added resource: {:?}", indexer.num_of_words());
+
+    format!("{resource:?}")
 }
 
 #[get("/search")]
@@ -112,48 +129,9 @@ async fn no_search(_data: web::Data<AppState>) -> impl Responder {
 
 #[get("/search/{term}")]
 async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Responder {
-    let query: Vec<&str> = term.split(' ').collect();
-    let database = data.database.lock().unwrap();
+    let indexer = data.indexer.lock().unwrap();
 
-    //percentage of valid words
-    let mut valid_results: Option<HashSet<IndexedResource>> = None;
-    for w in query {
-        //Normalise queries to lowercase
-        let w = w.to_ascii_lowercase();
+    let results = indexer.search(&term);
 
-        let curr_word_results = match search_word_in_db(&database, w.to_string()) {
-            None => return "[]".to_string(),
-            Some(curr_results) => curr_results,
-        };
-
-        match valid_results {
-            //Initialise valid_results
-            None => {
-                valid_results = Some(curr_word_results.to_owned());
-            }
-            Some(results) => {
-                let intersection: HashSet<IndexedResource> = curr_word_results
-                    .intersection(&results)
-                    .map(|s| s.to_owned())
-                    .collect();
-                valid_results = Some(intersection);
-            }
-        }
-    }
-
-    serde_json::to_string(&valid_results.unwrap()).unwrap()
-}
-
-fn search_word_in_db(
-    db: &HashMap<String, HashSet<IndexedResource>>,
-    word: String,
-) -> Option<&HashSet<IndexedResource>> {
-    db.get(&word)
-}
-
-fn calculate_word_priority(word: &str, _html_site: &str, words: &[String]) -> u32 {
-    //TODO: priorize lower levels of url, priorize word in url/title/description or main?
-
-    //atm priority is just the number of occurences in the site.
-    words.iter().filter(|w| *w == word).count() as u32
+    serde_json::to_string(&results.unwrap()).unwrap()
 }
