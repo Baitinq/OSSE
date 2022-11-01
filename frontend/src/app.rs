@@ -15,10 +15,14 @@ pub struct ResultComponentProps {
 #[function_component(ResultComponent)]
 fn result_component(props: &ResultComponentProps) -> Html {
     html! {
-        <div>
+        <div class="my-5">
             <a href={props.result.url.clone()}>
-                {props.result.url.clone()}{"--"}{props.result.title.clone()}{"----"}{props.result.description.clone()}{format!("PRIO: {}", props.result.priority)}
+                <p class="text-muted">{props.result.url.clone()}</p>
+                <p>{props.result.title.clone()}</p>
             </a>
+            <p>//No description if no description
+                {props.result.description.clone()}{format!("PRIO: {}", props.result.priority)}
+            </p>
         </div>
     }
 }
@@ -34,7 +38,6 @@ pub struct OSSEProps {
     pub initial_search_query: Option<String>,
 }
 
-//TODO: Error
 pub enum OSSEMessage {
     SearchSubmitted,
     SearchChanged(String),
