@@ -45,38 +45,13 @@ impl Component for OSSE {
     type Message = OSSEMessage;
     type Properties = OSSEProps;
 
-    //TODO: No code duplication for fetching in create() and update()
     fn create(ctx: &Context<Self>) -> Self {
         let mut search_query = String::from("");
 
-        //we push an update message if inital_search_query is not none
+        //we push an SearchSubmitted message if inital_search_query is not none
         if let Some(initial_search_query) = ctx.props().initial_search_query.clone() {
-            search_query = initial_search_query.clone();
-
-            let api_endpoint = ctx.props().api_endpoint.clone();
-            ctx.link().send_future(async move {
-                let endpoint = format!("{}/search/{}", api_endpoint, initial_search_query);
-
-                let fetched_response = match Request::get(endpoint.as_str()).send().await {
-                    Ok(response) => response,
-                    Err(_) => {
-                        return OSSEMessage::SearchFinished(Err(
-                            "Failed to connect to the API!".to_string()
-                        ))
-                    }
-                };
-
-                let fetched_results: Vec<IndexedResource> = match fetched_response.json().await {
-                    Err(_) => {
-                        return OSSEMessage::SearchFinished(Err(
-                            "Internal API Error!".to_string()
-                        ))
-                    }
-                    Ok(json) => json,
-                };
-
-                OSSEMessage::SearchFinished(Ok(fetched_results))
-            });
+            search_query = initial_search_query;
+            ctx.link().send_message(OSSEMessage::SearchSubmitted);
         }
 
         //WE may have data race between the future and the actual creation.
