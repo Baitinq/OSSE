@@ -2,6 +2,7 @@ use crate::Route;
 use gloo_net::http::Request;
 use itertools::Itertools;
 use lib::lib::*;
+use stylist::style;
 use wasm_bindgen::*;
 use web_sys::{EventTarget, HtmlInputElement};
 use yew::prelude::*;
@@ -14,11 +15,23 @@ pub struct ResultComponentProps {
 
 #[function_component(ResultComponent)]
 fn result_component(props: &ResultComponentProps) -> Html {
+    let style = style!(
+        r#"
+        a {
+            text-decoration: none;
+        }
+        .underline-hover:hover {
+            text-decoration: underline;
+        }
+    "#
+    )
+    .unwrap();
+    let style = style.get_class_name().to_owned();
     html! {
-        <div class="my-5">
+        <div class={format!("mb-5 {}", style)}>
             <a href={props.result.url.clone()}>
                 <p class="text-muted">{props.result.url.clone()}</p>
-                <p>{props.result.title.clone()}</p>
+                <p class="underline-hover">{props.result.title.clone()}</p>
             </a>
             <p>//No description if no description
                 {props.result.description.clone()}{format!("PRIO: {}", props.result.priority)}

@@ -16,4 +16,5 @@ gloo-net = "0.2"
 wasm-bindgen-futures = "0.4"
 itertools = "0.10.5"
 urlencoding = "2.1.2"
+stylist = "0.10"
 lib = { path = "../lib" }
