@@ -33,8 +33,11 @@ fn result_component(props: &ResultComponentProps) -> Html {
                 <p class="text-muted">{props.result.url.clone()}</p>
                 <p class="underline-hover">{props.result.title.clone()}</p>
             </a>
-            <p>//No description if no description
-                {props.result.description.clone()}{format!("PRIO: {}", props.result.priority)}
+            <p>
+                {match props.result.description.clone().as_str() {
+                    "" => "No Description.",
+                    otherwise => otherwise,
+                }}{format!("PRIO: {}", props.result.priority)}
             </p>
         </div>
     }
