@@ -20,20 +20,32 @@ fn result_component(props: &ResultComponentProps) -> Html {
         a {
             text-decoration: none;
         }
-        .underline-hover:hover {
+
+        .url {
+            font-size: 0.75em;
+        }
+
+        .title {
+            font-size: 1.25em;
+        }
+        .title:hover {
             text-decoration: underline;
+        }
+
+        .description {
+            font-size: 1em;
         }
     "#
     )
     .unwrap();
     let style = style.get_class_name().to_owned();
     html! {
-        <div class={format!("mb-5 {}", style)}>
+        <div class={format!("mb-4 {}", style)}>
             <a href={props.result.url.clone()}>
-                <p class="text-muted">{props.result.url.clone()}</p>
-                <p class="underline-hover">{props.result.title.clone()}</p>
+                <p class="url text-muted mb-0">{props.result.url.clone()}</p>
+                <p class="title mb-1">{props.result.title.clone()}</p>
             </a>
-            <p>
+            <p class="description">
                 {match props.result.description.clone().as_str() {
                     "" => "No Description.",
                     otherwise => otherwise,
