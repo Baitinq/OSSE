@@ -21,10 +21,10 @@ pub mod lib {
         //maybe in the future we need filetypes?
     }
 
-    //We implement PartialEq, Eq and Hash to ignore the priority field.
+    //We implement PartialEq, Eq and Hash to only care about the url field.
     impl PartialEq for IndexedResource {
         fn eq(&self, other: &Self) -> bool {
-            self.url == other.url && self.word == other.word
+            self.url == other.url
         }
     }
     impl Eq for IndexedResource {}
@@ -44,8 +44,7 @@ pub mod lib {
 
     impl Hash for IndexedResource {
         fn hash<H: Hasher>(&self, state: &mut H) {
-            self.url.hash(state);
-            self.word.hash(state);
+            self.url.hash(state)
         }
     }
 }
