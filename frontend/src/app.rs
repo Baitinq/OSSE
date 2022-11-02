@@ -39,6 +39,7 @@ fn result_component(props: &ResultComponentProps) -> Html {
     )
     .unwrap();
     let style = style.get_class_name().to_owned();
+
     html! {
         <div class={format!("mb-4 {}", style)}>
             <a href={props.result.url.clone()}>
@@ -46,9 +47,9 @@ fn result_component(props: &ResultComponentProps) -> Html {
                 <p class="title mb-1">{props.result.title.clone()}</p>
             </a>
             <p class="description">
-                {match props.result.description.clone().as_str() {
-                    "" => "No Description.",
-                    otherwise => otherwise,
+                {match props.result.description.clone() {
+                    None => "No Description.".to_string(),
+                    Some(description) => description.to_owned(),
                 }}{format!("PRIO: {}", props.result.priority)}
             </p>
         </div>

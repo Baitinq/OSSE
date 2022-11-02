@@ -14,8 +14,8 @@ pub trait Indexer {
         &mut self,
         word: &str,
         url: &str,
-        title: &str,
-        description: &str,
+        title: Option<String>,
+        description: Option<String>,
         content: &str,
         fixed_words: &[String],
     ) -> Result<(), String>;
@@ -89,18 +89,26 @@ async fn add_resource(
     let title_selector = scraper::Selector::parse("title").unwrap();
     let description_selector = scraper::Selector::parse("meta").unwrap();
 
-    let page_title: String = document
+    let page_title: Option<String> = match document
         .select(&title_selector)
         .map(|e| e.inner_html())
         .take(1)
-        .collect();
+        .collect::<String>()
+    {
+        s if s.is_empty() => None,
+        string => Some(string),
+    };
 
-    let page_description: String = document
+    let page_description: Option<String> = match document
         .select(&description_selector)
         .filter(|e| e.value().attr("name") == Some("description"))
         .filter_map(|e| e.value().attr("content"))
         .take(1)
-        .collect();
+        .collect::<String>()
+    {
+        s if s.is_empty() => None,
+        string => Some(string),
+    };
 
     //and for each changed content word we add it to the db (word -> list.append(url))
     let mut indexer = data.indexer.lock().unwrap();
@@ -108,8 +116,8 @@ async fn add_resource(
         let _ = indexer.insert(
             word,
             &resource.url,
-            &page_title,
-            &page_description,
+            page_title.clone(),
+            page_description.clone(),
             &resource.content,
             &fixed_words,
         );

@@ -14,10 +14,11 @@ pub mod lib {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct IndexedResource {
         pub url: String,
-        pub title: String,
-        pub description: String,
+        pub title: Option<String>,
+        pub description: Option<String>,
         pub priority: u32,
         pub word: Arc<String>,
+        //maybe in the future we need filetypes?
     }
 
     //We implement PartialEq, Eq and Hash to ignore the priority field.
