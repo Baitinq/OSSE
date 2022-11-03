@@ -1,7 +1,7 @@
 mod indexer_implementation;
 
 use actix_cors::Cors;
-use actix_web::{get, post, web, App, HttpServer, Responder};
+use actix_web::{get, post, routes, web, App, HttpServer, Responder};
 use indexer_implementation::IndexerImplementation;
 use kuchiki::traits::TendrilSink;
 use lib::lib::*;
@@ -130,7 +130,9 @@ async fn add_resource(
     format!("{resource:?}")
 }
 
+#[routes]
 #[get("/search")]
+#[get("/search/")]
 async fn no_search(_data: web::Data<AppState>) -> impl Responder {
     "[]".to_string()
 }
@@ -140,6 +142,7 @@ async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Resp
     let indexer = data.indexer.lock().unwrap();
 
     let results = indexer.search(&term);
+    //+is lowercase search good (we turn ascii lowercase, what do we do with inserting)
 
     serde_json::to_string(&results.unwrap()).unwrap()
 }
