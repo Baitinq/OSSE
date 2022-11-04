@@ -14,8 +14,9 @@ pub trait Indexer {
         &mut self,
         words: &[String],
         url: &str,
-        title: Option<String>,
-        description: Option<String>,
+        title: &Option<String>,
+        description: &Option<String>,
+        language: &Option<String>,
         content: &str,
     ) -> Result<(), String>;
     fn search(&self, term: &str) -> Result<HashSet<IndexedResource>, String>;
@@ -86,7 +87,8 @@ async fn add_resource(
     println!("xd: {:?}", fixed_words);
 
     let title_selector = scraper::Selector::parse("title").unwrap();
-    let description_selector = scraper::Selector::parse("meta").unwrap();
+    let meta_selector = scraper::Selector::parse("meta").unwrap();
+    let html_selector = scraper::Selector::parse("html").unwrap();
 
     let page_title: Option<String> = match document
         .select(&title_selector)
@@ -99,9 +101,20 @@ async fn add_resource(
     };
 
     let page_description: Option<String> = match document
-        .select(&description_selector)
+        .select(&meta_selector)
         .filter(|e| e.value().attr("name") == Some("description"))
         .filter_map(|e| e.value().attr("content"))
+        .take(1)
+        .collect::<String>()
+    {
+        s if s.is_empty() => None,
+        string => Some(string),
+    };
+
+    //TODO: rewrite with if let else
+    let page_language: Option<String> = match document
+        .select(&html_selector)
+        .filter_map(|e| e.value().attr("lang"))
         .take(1)
         .collect::<String>()
     {
@@ -114,12 +127,15 @@ async fn add_resource(
     let _ = indexer.insert(
         &fixed_words,
         &resource.url,
-        page_title.clone(),
-        page_description.clone(),
+        &page_title,
+        &page_description,
+        &page_language,
         &resource.content,
     );
 
     //TODO: ADD LANG? EN in meta tag (frontend)
+    //Now what to do, global lang?, per index lang?, website lang?
+    //TODO: max number of results in query
 
     println!("Added resource: {:?}", indexer.num_of_words());
 

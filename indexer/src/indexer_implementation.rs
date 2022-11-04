@@ -30,8 +30,9 @@ impl crate::Indexer for IndexerImplementation {
         &mut self,
         words: &[String],
         url: &str,
-        title: Option<String>,
-        description: Option<String>,
+        title: &Option<String>,
+        description: &Option<String>,
+        language: &Option<String>,
         content: &str,
     ) -> Result<(), String> {
         for word in words {
@@ -39,8 +40,9 @@ impl crate::Indexer for IndexerImplementation {
                 url: url.to_string(),
                 priority: Self::calculate_word_priority(word, content, words),
                 word: Arc::new(word.to_string()),
-                title: title.as_ref().map(String::from),
-                description: description.as_ref().map(String::from),
+                title: title.clone(),
+                description: description.clone(),
+                language: language.clone(),
             };
 
             match self.database.get_mut(word) {

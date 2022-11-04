@@ -18,6 +18,7 @@ pub mod lib {
         pub description: Option<String>,
         pub priority: u32,
         pub word: Arc<String>,
+        pub language: Option<String>,
         //maybe in the future we need filetypes?
     }
 
