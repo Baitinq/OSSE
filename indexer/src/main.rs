@@ -12,12 +12,11 @@ pub trait Indexer {
     //too many args?
     fn insert(
         &mut self,
-        word: &str,
+        words: &[String],
         url: &str,
         title: Option<String>,
         description: Option<String>,
         content: &str,
-        fixed_words: &[String],
     ) -> Result<(), String>;
     fn search(&self, term: &str) -> Result<HashSet<IndexedResource>, String>;
     fn num_of_words(&self) -> usize;
@@ -112,16 +111,13 @@ async fn add_resource(
 
     //and for each changed content word we add it to the db (word -> list.append(url))
     let mut indexer = data.indexer.lock().unwrap();
-    for word in &fixed_words {
-        let _ = indexer.insert(
-            word,
-            &resource.url,
-            page_title.clone(),
-            page_description.clone(),
-            &resource.content,
-            &fixed_words,
-        );
-    }
+    let _ = indexer.insert(
+        &fixed_words,
+        &resource.url,
+        page_title.clone(),
+        page_description.clone(),
+        &resource.content,
+    );
 
     //TODO: ADD LANG? EN in meta tag (frontend)
 

@@ -28,27 +28,28 @@ impl IndexerImplementation {
 impl crate::Indexer for IndexerImplementation {
     fn insert(
         &mut self,
-        word: &str,
+        words: &[String],
         url: &str,
         title: Option<String>,
         description: Option<String>,
         content: &str,
-        fixed_words: &[String],
     ) -> Result<(), String> {
-        let resource_to_add = IndexedResource {
-            url: url.to_string(),
-            priority: Self::calculate_word_priority(word, content, fixed_words),
-            word: Arc::new(word.to_string()),
-            title: title.map(String::from),
-            description: description.map(String::from),
-        };
+        for word in words {
+            let resource_to_add = IndexedResource {
+                url: url.to_string(),
+                priority: Self::calculate_word_priority(word, content, words),
+                word: Arc::new(word.to_string()),
+                title: title.as_ref().map(String::from),
+                description: description.as_ref().map(String::from),
+            };
 
-        match self.database.get_mut(word) {
-            Some(resources) => _ = resources.insert(resource_to_add),
-            None => {
-                _ = self
-                    .database
-                    .insert(word.to_string(), HashSet::from([resource_to_add]))
+            match self.database.get_mut(word) {
+                Some(resources) => _ = resources.insert(resource_to_add),
+                None => {
+                    _ = self
+                        .database
+                        .insert(word.to_string(), HashSet::from([resource_to_add]))
+                }
             }
         }
 
