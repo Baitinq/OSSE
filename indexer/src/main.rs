@@ -1,10 +1,11 @@
 mod indexer_implementation;
 
 use actix_cors::Cors;
-use actix_web::{get, post, routes, web, App, HttpServer, Responder};
+use actix_web::{post, web, App, HttpRequest, HttpServer, Responder};
 use indexer_implementation::IndexerImplementation;
 use kuchiki::traits::TendrilSink;
 use lib::lib::*;
+use serde::Deserialize;
 use std::collections::HashSet;
 use std::sync::Mutex;
 
@@ -43,9 +44,8 @@ async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .app_data(shared_state.clone())
-            .service(no_search)
-            .service(search)
             .service(add_resource)
+            .service(web::resource(["/search", "/search/", "/search/{query}"]).to(search))
     })
     .bind((address, port))?
     .run()
@@ -142,18 +142,26 @@ async fn add_resource(
     format!("{resource:?}")
 }
 
-#[routes]
-#[get("/search")]
-#[get("/search/")]
-async fn no_search(_data: web::Data<AppState>) -> impl Responder {
-    "[]".to_string()
+#[derive(Debug, Deserialize)]
+struct OptSearchPath {
+    query: Option<String>,
 }
 
-#[get("/search/{term}")]
-async fn search(data: web::Data<AppState>, term: web::Path<String>) -> impl Responder {
+async fn search(
+    _req: HttpRequest,
+    data: web::Data<AppState>,
+    path: web::Path<OptSearchPath>,
+) -> impl Responder {
     let indexer = data.indexer.lock().unwrap();
 
-    let results = indexer.search(&term);
+    let query = match &path.query {
+        Some(query) => query,
+        None => return "[]".to_string(),
+    };
+
+    println!("Query: {:?}", query);
+
+    let results = indexer.search(query);
     //+is lowercase search good (we turn ascii lowercase, what do we do with inserting)
 
     serde_json::to_string(&results.unwrap()).unwrap()
