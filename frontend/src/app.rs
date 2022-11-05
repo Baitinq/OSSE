@@ -186,8 +186,20 @@ impl Component for OSSE {
 
                 let results = results.as_ref().unwrap();
 
-                if !results.is_empty() {
-                    results
+                if results.is_empty() {
+                    return html! {
+                        <p>{"No results!"}</p>
+                    };
+                }
+
+                html! {
+                    <>
+                        //Problem with margin: When no results or early return then mb not applied
+                        <div class="mb-5 text-muted" style="font-size:0.85em;">
+                            {format!("{} Results for \"{}\"", results.len(), self.search_query)}
+                        </div>
+
+                        {results
                         .iter()
                         .sorted()
                         .map(|r| {
@@ -197,11 +209,8 @@ impl Component for OSSE {
                                 </div>
                             }
                         })
-                        .collect::<Html>()
-                } else {
-                    html! {
-                        <p>{"No results!"}</p>
-                    }
+                        .collect::<Html>()}
+                    </>
                 }
             };
 
@@ -223,7 +232,7 @@ impl Component for OSSE {
                 <div class="container">
                     <div class="row">
                         <div class="col">
-                                <section class="my-5">
+                                <section class="mt-5">
                                     <a href="/" style="text-decoration: none; color: inherit;">
                                         <b class="display-4">{"OSSE"}</b>
                                     </a>
