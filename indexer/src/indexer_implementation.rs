@@ -1,4 +1,5 @@
 use lib::lib::*;
+use ngrams::Ngram;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
@@ -36,6 +37,10 @@ impl crate::Indexer for IndexerImplementation {
         content: &str,
     ) -> Result<(), String> {
         for word in words {
+            let ngrams: Vec<_> = word.chars().ngrams(2).pad().collect();
+
+            println!("Ngrams for {}: {:?}", word, ngrams);
+
             let resource_to_add = IndexedResource {
                 url: url.to_string(),
                 priority: Self::calculate_word_priority(word, content, words),

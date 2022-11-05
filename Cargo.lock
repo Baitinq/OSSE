@@ -1311,6 +1311,7 @@ dependencies = [
  "html2text",
  "kuchiki",
  "lib",
+ "ngrams",
  "scraper",
  "serde",
  "serde_json",
@@ -1671,6 +1672,12 @@ name = "new_debug_unreachable"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e4a24736216ec316047a1fc4252e27dabb04218aa4a3f37c6e7ddbf1f9782b54"
+
+[[package]]
+name = "ngrams"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad9273e27d7914b3d11aeac20a91c0da7ef1e89edc4e3825021ebb8ac3b83bf2"
 
 [[package]]
 name = "nodrop"
