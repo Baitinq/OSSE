@@ -32,7 +32,7 @@ struct AppState {
 async fn main() -> std::io::Result<()> {
     println!("Hello, world! Im the indexer!");
 
-    serve_http_endpoint("0.0.0.0", 4444).await
+    serve_http_endpoint("0.0.0.0", 8080).await
 }
 
 async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
@@ -45,7 +45,16 @@ async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
             .wrap(cors)
             .app_data(shared_state.clone())
             .service(add_resource)
-            .service(web::resource(["/search", "/search/", "/search/{query}"]).to(search))
+            .service(
+                web::resource(["/api/search", "/api/search/", "/api/search/{query}"]).to(search),
+            )
+            .service(
+                actix_web_lab::web::spa()
+                    .index_file("./frontend/dist/index.html")
+                    .static_resources_mount("/")
+                    .static_resources_location("./frontend/dist")
+                    .finish(),
+            ) //TODO: maybe separate gui backend from api?
     })
     .bind((address, port))?
     .run()
@@ -53,7 +62,7 @@ async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
 }
 
 //TODO: sufficiently simmilar word in search (algorithm)
-#[post("/resource")]
+#[post("/api/resource")]
 async fn add_resource(
     data: web::Data<AppState>,
     resource: web::Json<CrawledResource>,

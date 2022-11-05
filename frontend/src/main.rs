@@ -17,10 +17,10 @@ enum Route {
 fn switch_routes(routes: Route) -> Html {
     match routes {
         Route::OSSEHome | Route::OSSEHomeEmptySearch => html! {
-            <OSSE api_endpoint={"http://127.0.0.1:4444"} initial_search_query={None as Option<String>} />
+            <OSSE api_endpoint={"/api"} initial_search_query={None as Option<String>} />
         },
         Route::OSSESearch { query } => html! {
-            <OSSE api_endpoint={"http://127.0.0.1:4444"} initial_search_query={Some(query)} />
+            <OSSE api_endpoint={"/api"} initial_search_query={Some(query)} />
         },
     }
 }
