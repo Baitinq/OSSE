@@ -161,8 +161,6 @@ async fn search(
     data: web::Data<AppState>,
     path: web::Path<OptSearchPath>,
 ) -> impl Responder {
-    let indexer = data.indexer.lock().unwrap();
-
     let query = match &path.query {
         Some(query) => query,
         None => return "[]".to_string(),
@@ -170,8 +168,8 @@ async fn search(
 
     println!("Query: {:?}", query);
 
-    let results = indexer.search(query);
-    //+is lowercase search good (we turn ascii lowercase, what do we do with inserting)
+    let results = data.indexer.lock().unwrap().search(query);
+    //indexer is slow (gets stuck when inserting stuff)
 
     serde_json::to_string(&results.unwrap()).unwrap()
 }
