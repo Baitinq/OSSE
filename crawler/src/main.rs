@@ -55,7 +55,7 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>, max_queue_size: usiz
             //push content to index
             let indexer_response = match push_crawl_entry_to_indexer(
                 &http_client,
-                "http://127.0.0.1:8080/api/resource".to_string(),
+                "http://127.0.0.1:4444/api/resource".to_string(),
                 url,
                 content,
             )

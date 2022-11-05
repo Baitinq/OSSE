@@ -23,7 +23,12 @@ Install cargo through your preferred method.
 ### 2. Run!
 
 ```
-$ trunk serve frontend/index.html
 $ cargo run --bin indexer
 $ cargo run --bin crawler
+$ trunk serve frontend/index.html
+```
+
+### 3. Use?!
+```
+ Navigate to 127.0.0.1:8080 on your favorite browser:)
 ```

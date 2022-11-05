@@ -32,34 +32,29 @@ struct AppState {
 async fn main() -> std::io::Result<()> {
     println!("Hello, world! Im the indexer!");
 
-    serve_http_endpoint("0.0.0.0", 8080).await
+    serve_http_endpoint("0.0.0.0", 4444).await
 }
 
 async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
     let shared_state = web::Data::new(AppState {
-        indexer: Mutex::new(Box::new(IndexerImplementation::new())),
+        indexer: Mutex::new(Box::new(IndexerImplementation::new())), //maybe mutex is not the best option
     });
     HttpServer::new(move || {
-        let cors = Cors::permissive();
         App::new()
-            .wrap(cors)
+            .wrap(Cors::permissive())
             .app_data(shared_state.clone())
             .service(add_resource)
             .service(
                 web::resource(["/api/search", "/api/search/", "/api/search/{query}"]).to(search),
             )
-            .service(
-                actix_web_lab::web::spa()
-                    .index_file("./frontend/dist/index.html")
-                    .static_resources_mount("/")
-                    .static_resources_location("./frontend/dist")
-                    .finish(),
-            ) //TODO: maybe separate gui backend from api?
     })
     .bind((address, port))?
     .run()
     .await
 }
+
+//TODO: Max description size
+//TODO: Current result below search bar updates with it
 
 //TODO: sufficiently simmilar word in search (algorithm)
 #[post("/api/resource")]

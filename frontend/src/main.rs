@@ -1,6 +1,7 @@
 mod app;
 
 use app::OSSE;
+use web_sys::window;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -15,12 +16,19 @@ enum Route {
 }
 
 fn switch_routes(routes: Route) -> Html {
+    let location = window().unwrap().location();
+    let api_endpoint = format!(
+        "{}//{}:{}/api",
+        location.protocol().unwrap(),
+        location.hostname().unwrap(),
+        4444
+    );
     match routes {
         Route::OSSEHome | Route::OSSEHomeEmptySearch => html! {
-            <OSSE api_endpoint={"/api"} initial_search_query={None as Option<String>} />
+            <OSSE api_endpoint={api_endpoint} initial_search_query={None as Option<String>} />
         },
         Route::OSSESearch { query } => html! {
-            <OSSE api_endpoint={"/api"} initial_search_query={Some(query)} />
+            <OSSE api_endpoint={api_endpoint} initial_search_query={Some(query)} />
         },
     }
 }
