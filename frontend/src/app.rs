@@ -224,7 +224,9 @@ impl Component for OSSE {
                     <div class="row">
                         <div class="col">
                                 <section class="my-5">
-                                    <b class="display-4">{"OSSE"}</b>
+                                    <a href="/" style="text-decoration: none; color: inherit;">
+                                        <b class="display-4">{"OSSE"}</b>
+                                    </a>
                                     <p>{"Your favorite independent search engine."}</p>
                                     <form {onsubmit}>
                                         <div class="input-group input-group-lg my-2">
