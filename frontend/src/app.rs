@@ -56,9 +56,14 @@ fn result_component(props: &ResultComponentProps) -> Html {
     }
 }
 
+pub struct SearchResult {
+    query: String,
+    results: Result<Vec<IndexedResource>, String>,
+}
+
 pub struct OSSE {
-    pub search_query: String,
-    pub results: Option<Result<Vec<IndexedResource>, String>>, //TODO: some loading?
+    pub current_search_query: String,
+    pub results: Option<SearchResult>, //TODO: some loading?
 }
 
 #[derive(Properties, PartialEq, Eq)]
@@ -88,7 +93,7 @@ impl Component for OSSE {
 
         //WE may have data race between the future and the actual creation.
         OSSE {
-            search_query: urlencoding::decode(search_query.as_str())
+            current_search_query: urlencoding::decode(search_query.as_str())
                 .to_owned()
                 .unwrap()
                 .to_string(),
@@ -97,10 +102,10 @@ impl Component for OSSE {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        let search_query = self.current_search_query.clone();
         match msg {
             OSSEMessage::SearchSubmitted => {
                 let api_endpoint = ctx.props().api_endpoint.clone();
-                let search_query = self.search_query.clone();
                 let navigator = ctx.link().navigator().unwrap();
 
                 navigator.push(&Route::OSSESearch {
@@ -135,17 +140,23 @@ impl Component for OSSE {
                 false
             }
             OSSEMessage::SearchChanged(search_query) => {
-                self.search_query = search_query;
+                self.current_search_query = search_query;
 
                 true
             }
             OSSEMessage::SearchFinished(search_results) => {
                 match search_results {
                     Ok(results) => {
-                        self.results = Some(Ok(results));
+                        self.results = Some(SearchResult {
+                            query: search_query,
+                            results: Ok(results),
+                        });
                     }
                     Err(error) => {
-                        self.results = Some(Err(error));
+                        self.results = Some(SearchResult {
+                            query: search_query,
+                            results: Err(error),
+                        });
                     }
                 };
 
@@ -170,49 +181,50 @@ impl Component for OSSE {
             OSSEMessage::SearchChanged(input)
         });
 
-        let display_results =
-            |maybe_results: &Option<Result<Vec<IndexedResource>, String>>| -> Html {
-                if maybe_results.is_none() {
-                    return html! {};
-                }
+        let display_results = |maybe_results: &Option<SearchResult>| -> Html {
+            if maybe_results.is_none() {
+                return html! {};
+            }
 
-                let results = maybe_results.as_ref().unwrap();
+            let result = maybe_results.as_ref().unwrap();
+            let search_query = &result.query;
+            let results = &result.results;
 
-                if results.is_err() {
-                    return html! {
-                        <p>{format!("ERROR: {}", results.as_ref().err().unwrap())}</p>
-                    };
-                }
+            if results.is_err() {
+                return html! {
+                    <p>{format!("ERROR: {}", results.as_ref().err().unwrap())}</p>
+                };
+            }
 
-                let results = results.as_ref().unwrap();
+            let results = results.as_ref().unwrap();
 
-                if results.is_empty() {
-                    return html! {
-                        <p>{"No results!"}</p>
-                    };
-                }
+            if results.is_empty() {
+                return html! {
+                    <p>{"No results!"}</p>
+                };
+            }
 
-                html! {
-                    <>
-                        //Problem with margin: When no results or early return then mb not applied
-                        <div class="mb-5 text-muted" style="font-size:0.85em;">
-                            {format!("{} Results for \"{}\"", results.len(), self.search_query)}
-                        </div>
+            html! {
+                <>
+                    //Problem with margin: When no results or early return then mb not applied
+                    <div class="mb-5 text-muted" style="font-size:0.85em;">
+                        {format!("{} Results for \"{}\"", results.len(), search_query)}
+                    </div>
 
-                        {results
-                        .iter()
-                        .sorted()
-                        .map(|r| {
-                            html! {
-                                <div key={r.url.to_owned()}>
-                                    <ResultComponent result={r.clone()} />
-                                </div>
-                            }
-                        })
-                        .collect::<Html>()}
-                    </>
-                }
-            };
+                    {results
+                    .iter()
+                    .sorted()
+                    .map(|r| {
+                        html! {
+                            <div key={r.url.to_owned()}>
+                                <ResultComponent result={r.clone()} />
+                            </div>
+                        }
+                    })
+                    .collect::<Html>()}
+                </>
+            }
+        };
 
         html! {
             <>
@@ -239,7 +251,7 @@ impl Component for OSSE {
                                     <p>{"Your favorite independent search engine."}</p>
                                     <form {onsubmit}>
                                         <div class="input-group input-group-lg my-2">
-                                            <input {oninput} value={self.search_query.clone()}type="text" class="form-control" placeholder="Search with OSSE" />
+                                            <input {oninput} value={self.current_search_query.clone()}type="text" class="form-control" placeholder="Search with OSSE" />
                                             <button class="btn btn-primary" type="submit" >{"Search!"}</button>
                                         </div>
                                     </form>
