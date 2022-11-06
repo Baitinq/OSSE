@@ -55,9 +55,6 @@ async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
     .await
 }
 
-//TODO: Max description size
-//TODO: Current result below search bar updates with it
-//TODO: Remove html symbols italic and stuff in frontend (or apply them?)
 //TODO: Better readme
 
 //TODO: sufficiently simmilar word in search (algorithm)
@@ -105,7 +102,7 @@ async fn add_resource(
         .collect::<String>()
     {
         s if s.is_empty() => None,
-        string => Some(string),
+        string => Some(html_escape::decode_html_entities(&string).to_string()),
     };
 
     let page_description: Option<String> = match document
@@ -116,7 +113,7 @@ async fn add_resource(
         .collect::<String>()
     {
         s if s.is_empty() => None,
-        string => Some(string),
+        string => Some(html_escape::decode_html_entities(&string).to_string()),
     };
 
     //TODO: rewrite with if let else
