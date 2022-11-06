@@ -40,16 +40,30 @@ fn result_component(props: &ResultComponentProps) -> Html {
     .unwrap();
     let style = style.get_class_name().to_owned();
 
+    fn truncate(s: &str, max_chars: usize) -> &str {
+        match s.char_indices().nth(max_chars) {
+            None => s,
+            Some((idx, _)) => &s[..idx],
+        }
+    }
+
     html! {
         <div class={format!("mb-4 {}", style)}>
             <a href={props.result.url.clone()}>
                 <p class="url text-muted mb-0">{props.result.url.clone()}</p>
-                <p class="title mb-1">{props.result.title.clone()}</p>
+                <p class="title mb-1">{match props.result.title.clone() {
+                    None => "No Title".to_string(),
+                    Some(title) => {
+                        truncate(&title, 70).to_string()
+                },
+                }}</p>
             </a>
             <p class="description">
                 {match props.result.description.clone() {
                     None => "No Description.".to_string(),
-                    Some(description) => description.to_owned(),
+                    Some(description) => {
+                        truncate(&description, 200).to_string()
+                },
                 }}{format!("PRIO: {}", props.result.priority)}
             </p>
         </div>
