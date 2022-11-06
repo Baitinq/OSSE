@@ -30,7 +30,9 @@ struct AppState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("Hello, world! Im the indexer!");
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+
+    log::info!("Hello, world! Im the indexer!");
 
     serve_http_endpoint("0.0.0.0", 4444).await
 }
@@ -55,6 +57,8 @@ async fn serve_http_endpoint(address: &str, port: u16) -> std::io::Result<()> {
 
 //TODO: Max description size
 //TODO: Current result below search bar updates with it
+//TODO: Remove html symbols italic and stuff in frontend (or apply them?)
+//TODO: Better readme
 
 //TODO: sufficiently simmilar word in search (algorithm)
 #[post("/api/resource")]
@@ -88,7 +92,7 @@ async fn add_resource(
         .filter(|w: &String| !w.is_empty())
         .collect();
 
-    println!("xd: {:?}", fixed_words);
+    log::debug!("xd: {:?}", fixed_words);
 
     let title_selector = scraper::Selector::parse("title").unwrap();
     let meta_selector = scraper::Selector::parse("meta").unwrap();
@@ -141,7 +145,7 @@ async fn add_resource(
     //Now what to do, global lang?, per index lang?, website lang?
     //TODO: max number of results in query
 
-    println!("Added resource: {:?}", indexer.num_of_words());
+    log::debug!("Added resource: {:?}", indexer.num_of_words());
 
     format!("{resource:?}")
 }
@@ -161,7 +165,7 @@ async fn search(
         None => return "[]".to_string(),
     };
 
-    println!("Query: {:?}", query);
+    log::debug!("Query: {:?}", query);
 
     let results = data.indexer.lock().unwrap().search(query);
     //indexer is slow (gets stuck when inserting stuff)
