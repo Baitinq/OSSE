@@ -40,10 +40,14 @@ fn result_component(props: &ResultComponentProps) -> Html {
     .unwrap();
     let style = style.get_class_name().to_owned();
 
-    fn truncate(s: &str, max_chars: usize) -> &str {
-        match s.char_indices().nth(max_chars) {
-            None => s,
-            Some((idx, _)) => &s[..idx],
+    fn truncate(s: &str, max_chars: usize) -> String {
+        match s.char_indices().nth(max_chars - 3) {
+            None => s.to_string(),
+            Some((idx, _)) => {
+                let mut s = s[..idx].to_string();
+                s.push_str("...");
+                s
+            }
         }
     }
 
@@ -54,7 +58,7 @@ fn result_component(props: &ResultComponentProps) -> Html {
                 <p class="title mb-1">{match props.result.title.clone() {
                     None => "No Title".to_string(),
                     Some(title) => {
-                        truncate(&title, 70).to_string()//TODO: add ... if truncate
+                        truncate(&title, 70)
                 },
                 }}</p>
             </a>
@@ -62,7 +66,7 @@ fn result_component(props: &ResultComponentProps) -> Html {
                 {match props.result.description.clone() {
                     None => "No Description.".to_string(),
                     Some(description) => {
-                        truncate(&description, 200).to_string() //TODO: add ... if truncate
+                        truncate(&description, 200)
                 },
                 }}{format!("PRIO: {}", props.result.priority)}
             </p>
