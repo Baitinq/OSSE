@@ -6,7 +6,9 @@ use url::Url;
 
 #[tokio::main]
 async fn main() {
-    println!("Hello, world! Im the crawler!");
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+
+    log::info!("Hello, world! Im the crawler!");
 
     let root_urls = include_str!("../top-1000-websites.txt");
     let root_urls = root_urls.split('\n').collect();
@@ -19,7 +21,7 @@ async fn main() {
 }
 
 async fn crawler(http_client: Client, root_urls: Vec<&str>, max_queue_size: usize) {
-    dbg!("Starting to crawl!");
+    log::debug!("Starting to crawl!");
 
     //add root urls to queue
     let (tx_crawling_queue, rx_crawling_queue) =
@@ -39,7 +41,7 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>, max_queue_size: usiz
         tokio::spawn(async move {
             let (content, crawled_urls) = match crawl_url(&http_client, url.as_str()).await {
                 Err(e) => {
-                    println!("Error crawling ({}): {}", url, e);
+                    log::debug!("Error crawling ({}): {}", url, e);
                     return;
                 }
                 Ok(result) => result,
@@ -49,8 +51,8 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>, max_queue_size: usiz
             //CAN WE DO UNWRAP OR RETURN or lambda
             //HOW DOES CRAWLER WORK. DOESNT QUEUE FILL. LOTS OF WAITING THINGS??
 
-            //dbg!("Content: {:?}", &content);
-            dbg!("Next urls: {:?}", &crawled_urls);
+            //log::debug!("Content: {:?}", &content);
+            log::debug!("Next urls: {:?}", &crawled_urls);
 
             //push content to index
             let indexer_response = match push_crawl_entry_to_indexer(
@@ -62,13 +64,13 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>, max_queue_size: usiz
             .await
             {
                 Err(e) => {
-                    println!("{e}");
+                    log::debug!("{e}");
                     return;
                 }
                 Ok(res) => res.text().await,
             };
 
-            dbg!("Pushed to indexer {:?}", &indexer_response);
+            log::debug!("Pushed to indexer {:?}", &indexer_response);
 
             for url in crawled_urls {
                 tx_crawling_queue.send(url).await.unwrap();
@@ -78,7 +80,7 @@ async fn crawler(http_client: Client, root_urls: Vec<&str>, max_queue_size: usiz
 }
 
 async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<String>), String> {
-    dbg!("Crawling {:?}", url);
+    log::debug!("Crawling {:?}", url);
 
     let url = Url::parse(url).unwrap();
 
@@ -121,15 +123,10 @@ async fn crawl_url(http_client: &Client, url: &str) -> Result<(String, Vec<Strin
     //probs lots of places where we can borrow or not do stupid stuff
     //search for phrases?
     //http workings lagging behind crawler, what to do?
-    //group responses and transmit them in an array of 10 or smth -> or maybe just lower q size!
-    //use structs in database indexer
-    //we need words priority or word list or smth (or in value of database show number of occurance or just val of importance of occurances)
     //i dont understand dbg! (how to print {})
-    //is there empty urls?
     //user agent?
-    //frontend: search/query and redirect
 
-    println!("Returning next urls, {:?}", next_urls);
+    log::debug!("Returning next urls, {:?}", next_urls);
     Ok((response_text, next_urls))
 }
 
@@ -139,7 +136,7 @@ async fn push_crawl_entry_to_indexer(
     url: String,
     content: String,
 ) -> Result<Response, String> {
-    dbg!("Pushin to indexer");
+    log::debug!("Pushin to indexer");
 
     let request_body = CrawledResource { url, content };
 
