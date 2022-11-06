@@ -54,7 +54,7 @@ fn result_component(props: &ResultComponentProps) -> Html {
                 <p class="title mb-1">{match props.result.title.clone() {
                     None => "No Title".to_string(),
                     Some(title) => {
-                        truncate(&title, 70).to_string()
+                        truncate(&title, 70).to_string()//TODO: add ... if truncate
                 },
                 }}</p>
             </a>
@@ -62,7 +62,7 @@ fn result_component(props: &ResultComponentProps) -> Html {
                 {match props.result.description.clone() {
                     None => "No Description.".to_string(),
                     Some(description) => {
-                        truncate(&description, 200).to_string()
+                        truncate(&description, 200).to_string() //TODO: add ... if truncate
                 },
                 }}{format!("PRIO: {}", props.result.priority)}
             </p>
@@ -72,12 +72,12 @@ fn result_component(props: &ResultComponentProps) -> Html {
 
 pub struct SearchResult {
     query: String,
-    results: Result<Vec<IndexedResource>, String>,
+    results: Option<Result<Vec<IndexedResource>, String>>, //none signifies not finished loading
 }
 
 pub struct OSSE {
     pub current_search_query: String,
-    pub results: Option<SearchResult>, //TODO: some loading?
+    pub results: Option<SearchResult>, //none signifies no query yet
 }
 
 #[derive(Properties, PartialEq, Eq)]
@@ -126,8 +126,9 @@ impl Component for OSSE {
                     query: urlencoding::encode(search_query.as_str()).to_string(),
                 });
 
+                let search_query_clone = search_query.clone();
                 ctx.link().send_future(async move {
-                    let endpoint = format!("{}/search/{}", api_endpoint, search_query);
+                    let endpoint = format!("{}/search/{}", &api_endpoint, &search_query_clone);
 
                     let fetched_response = match Request::get(endpoint.as_str()).send().await {
                         Ok(response) => response,
@@ -151,7 +152,12 @@ impl Component for OSSE {
                     OSSEMessage::SearchFinished(Ok(fetched_results))
                 });
 
-                false
+                self.results = Some(SearchResult {
+                    query: search_query,
+                    results: None, //none yet
+                });
+
+                true
             }
             OSSEMessage::SearchChanged(search_query) => {
                 self.current_search_query = search_query;
@@ -163,13 +169,13 @@ impl Component for OSSE {
                     Ok(results) => {
                         self.results = Some(SearchResult {
                             query: search_query,
-                            results: Ok(results),
+                            results: Some(Ok(results)),
                         });
                     }
                     Err(error) => {
                         self.results = Some(SearchResult {
                             query: search_query,
-                            results: Err(error),
+                            results: Some(Err(error)),
                         });
                     }
                 };
@@ -196,6 +202,7 @@ impl Component for OSSE {
         });
 
         let display_results = |maybe_results: &Option<SearchResult>| -> Html {
+            //not yet searched
             if maybe_results.is_none() {
                 return html! {};
             }
@@ -203,6 +210,17 @@ impl Component for OSSE {
             let result = maybe_results.as_ref().unwrap();
             let search_query = &result.query;
             let results = &result.results;
+
+            //not yet loaded results
+            if results.is_none() {
+                return html! {
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">{"Loading..."}</span>
+                    </div>
+                };
+            }
+
+            let results = results.as_ref().unwrap();
 
             if results.is_err() {
                 return html! {
