@@ -1,15 +1,18 @@
 use lib::lib::*;
+use rust_stemmers::{Algorithm, Stemmer};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 pub struct IndexerImplementation {
     pub database: HashMap<String, HashSet<IndexedResource>>,
+    stemmer: Stemmer,
 }
 
 impl IndexerImplementation {
     pub fn new() -> Self {
         Self {
             database: HashMap::new(),
+            stemmer: Stemmer::create(Algorithm::English), //todo: depend on lang
         }
     }
 
@@ -19,6 +22,8 @@ impl IndexerImplementation {
 
     fn calculate_word_priority(word: &str, _html_site: &str, words: &[String]) -> u32 {
         //TODO: priorize lower levels of url, priorize word in url/title/description or main?
+
+        //TODO: levshtein
 
         //atm priority is just the number of occurences in the site.
         words.iter().filter(|w| *w == word).count() as u32
@@ -38,19 +43,21 @@ impl crate::Indexer for IndexerImplementation {
         for word in words {
             let resource_to_add = IndexedResource {
                 url: url.to_string(),
-                priority: Self::calculate_word_priority(word, content, words),
+                priority: Self::calculate_word_priority(word, content, words), //we should take into account title, description lang etc
                 word: Arc::new(word.to_string()),
                 title: title.clone(),
                 description: description.clone(),
                 language: language.clone(),
             };
 
-            match self.database.get_mut(word) {
+            let stemmed_word = self.stemmer.stem(word).to_string();
+            log::debug!("Word: {}, Stemmed word: {}", word, stemmed_word);
+            match self.database.get_mut(&stemmed_word) {
                 Some(resources) => _ = resources.insert(resource_to_add),
                 None => {
                     _ = self
                         .database
-                        .insert(word.to_string(), HashSet::from([resource_to_add]))
+                        .insert(stemmed_word, HashSet::from([resource_to_add]))
                 }
             }
         }
@@ -67,7 +74,8 @@ impl crate::Indexer for IndexerImplementation {
             //Normalise queries to lowercase
             let w = w.to_ascii_lowercase();
 
-            let curr_word_results = match self.search_word_in_db(w.to_string()) {
+            let stemmed_word = self.stemmer.stem(&w).to_string();
+            let curr_word_results = match self.search_word_in_db(stemmed_word) {
                 None => return Ok(HashSet::new()), //I dont really like this
                 Some(curr_results) => curr_results,
             };

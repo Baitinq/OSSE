@@ -16,6 +16,7 @@ serde_json = "1.0.87"
 kuchiki = "0.8.1"
 log = "0.4.17"
 env_logger = "0.9.1"
+rust-stemmers = "1.2.0"
 lib = { path = "../lib" }
 
 [[bin]]
