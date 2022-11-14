@@ -23,10 +23,41 @@ impl IndexerImplementation {
     fn calculate_word_priority(word: &str, _html_site: &str, words: &[String]) -> u32 {
         //TODO: priorize lower levels of url, priorize word in url/title/description or main?
 
-        //TODO: levshtein
+        let mut priority = 0u32;
+        for w in words {
+            let lev_distance = levenshtein::levenshtein(word, w) as u32;
+            log::debug!(
+                "Lev distance between target: {} and curr: {} -> {} --- w len: {}",
+                word,
+                w,
+                lev_distance,
+                w.len()
+            );
+            priority += lev_distance;
+        }
 
-        //atm priority is just the number of occurences in the site.
-        words.iter().filter(|w| *w == word).count() as u32
+        priority
+    }
+
+    fn create_indexed_resource(
+        url: &str,
+        word: &str,
+        title: &Option<String>,
+        description: &Option<String>,
+        language: &Option<String>,
+        content: &str,
+        words: &[String],
+    ) -> IndexedResource {
+        let priority = Self::calculate_word_priority(word, content, words); //we should take into account title, description lang etc
+
+        IndexedResource {
+            url: url.to_string(),
+            priority,
+            word: Arc::new(word.to_string()),
+            title: title.clone(),
+            description: description.clone(),
+            language: language.clone(),
+        }
     }
 }
 
@@ -41,14 +72,15 @@ impl crate::Indexer for IndexerImplementation {
         content: &str,
     ) -> Result<(), String> {
         for word in words {
-            let resource_to_add = IndexedResource {
-                url: url.to_string(),
-                priority: Self::calculate_word_priority(word, content, words), //we should take into account title, description lang etc
-                word: Arc::new(word.to_string()),
-                title: title.clone(),
-                description: description.clone(),
-                language: language.clone(),
-            };
+            let resource_to_add = Self::create_indexed_resource(
+                url,
+                word,
+                title,
+                description,
+                language,
+                content,
+                words,
+            );
 
             let stemmed_word = self.stemmer.stem(word).to_string();
             log::debug!("Word: {}, Stemmed word: {}", word, stemmed_word);

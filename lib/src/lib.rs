@@ -36,10 +36,10 @@ pub mod lib {
         }
     }
 
-    //Reverse ordering as priority: 1 is less than priority: 2
+    //Priority 1 is higher than priority 2
     impl Ord for IndexedResource {
         fn cmp(&self, other: &Self) -> Ordering {
-            self.priority.cmp(&other.priority).reverse()
+            self.priority.cmp(&other.priority)
         }
     }
 
